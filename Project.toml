@@ -1,0 +1,16 @@
+name = "MiniRocket"
+uuid = "4869f98a-92d2-4a27-bbf6-5599fe134177"
+authors = ["Antonín Kříž"]
+version = "0.1.0"
+
+[deps]
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
