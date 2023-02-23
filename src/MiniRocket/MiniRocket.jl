@@ -1,9 +1,9 @@
 module MiniRocket
 
-export fit
-export transform
-
 include("utils.jl")
 include("minirocket.jl")
+
+export MiniRocketModel
+using ._MiniRocket: MiniRocketModel
 
 end

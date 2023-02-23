@@ -1,5 +1,6 @@
-using TsClassification: MiniRocket
+using TsClassification: MiniRocketModel
 using Test: @testset, @test
+using MLJ
 
 
 const M_FIT::Matrix{Float64} = [
@@ -49,7 +50,10 @@ const TRANSFORMED::Vector{Float64} = [-1.0, -10.0, 11.71706768869104, 0.0, -4.86
 
 
 @testset "MiniRocket.jl - fit() can run" begin
-    d, n, b = MiniRocket.fit(M_FIT, num_features=Unsigned(190))
+    m = MiniRocketModel(num_features=Unsigned(190))
+
+    x = machine(m, M_FIT)
+    d, n, b = fit!(x)
     @test d == DILATIONS
     @test n == NUM_FEATURES_PER_DILATION
     @test b ≈ BIASES
@@ -57,6 +61,7 @@ end
 
 
 @testset "MiniRocket.jl - transform() can run" begin
-    t = MiniRocket.transform(M_TRANSFORM, dilations=DILATIONS, num_features_per_dilation=NUM_FEATURES_PER_DILATION, biases=BIASES)
+    m = MiniRocketModel()
+    t = transform(m, M_TRANSFORM, dilations=DILATIONS, num_features_per_dilation=NUM_FEATURES_PER_DILATION, biases=BIASES)
     @test t ≈ TRANSFORMED
 end

@@ -1,3 +1,7 @@
+module _Utils
+
+export sorted_unique_counts, logspace
+
 function sorted_unique_counts(arr::AbstractVector{T})::Tuple{AbstractVector{T},AbstractVector{Unsigned}} where {T}
     if isempty(arr)
         return [], []
@@ -32,3 +36,5 @@ end
 
 
 @inline logspace(start, stop, n; base=10) = base .^ range(start, stop, n)
+
+end

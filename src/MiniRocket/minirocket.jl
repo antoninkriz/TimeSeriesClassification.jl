@@ -1,7 +1,13 @@
+module _MiniRocket
+
 using StaticArrays: SMatrix
 using Statistics: quantile, mean
 using Base.Threads: @threads
+import MLJModelInterface
 
+using .._Utils: sorted_unique_counts, logspace
+
+export MiniRocketModel
 
 
 const NUM_KERNELS = 84
@@ -116,7 +122,7 @@ function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_
 end
 
 
-function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, num_features_per_dilation::AbstractVector{Unsigned}, biases::AbstractVector{T}) where {T <: AbstractFloat}
+function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, num_features_per_dilation::AbstractVector{Unsigned}, biases::AbstractVector{T})::AbstractMatrix{T} where {T <: AbstractFloat}
     input_length, num_examples = size(X)
 
     features = zeros(T, (num_examples, NUM_KERNELS * sum(num_features_per_dilation)))
@@ -175,5 +181,23 @@ function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, nu
         end
     end
 
-    return biases
+    return features
+end
+
+
+MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface.Unsupervised
+    num_features::Unsigned = Unsigned(10_000)::(84 <= _)
+    max_dilations_per_kernel::Unsigned = Unsigned(32)::(0 < _)
+end
+
+
+function MLJModelInterface.fit(model::MiniRocketModel, verbosity, X::AbstractMatrix{T})::Tuple{Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}, Nothing, Nothing} where {T <: AbstractFloat}
+    f_res = fit(X, num_features = model.num_features, max_dilations_per_kernel = model.max_dilations_per_kernel)
+    return f_res, nothing, nothing
+end
+
+function MLJModelInterface.transform(model::MiniRocketModel, fitresult::Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}, Xnew::AbstractMatrix{T})::AbstractMatrix{T} where {T <: AbstractFloat}
+    return transform(Xnew, dilations = fitresult[1], num_features_per_dilation = fitresult[2], biases = fitresult[3])
+end
+
 end
