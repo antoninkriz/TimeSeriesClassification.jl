@@ -26,7 +26,7 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
     num_features = NUM_KERNELS * sum(num_features_per_dilation)
     biases = zeros(T, num_features)
 
-    feature_index_start = 1
+    feature_index_start = 0
 
     # This will work ONLY with the assumption that the dataset is already shuffled!
     # Also, this index starts from zero because it's used with modulo operation.
@@ -38,7 +38,7 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
         num_features_this_dilation = @views num_features_per_dilation[dilation_index]
 
         for kernel_index = 1:NUM_KERNELS
-            feature_index_end = feature_index_start + num_features_this_dilation - 1
+            feature_index_end = feature_index_start + num_features_this_dilation
 
             # Single feature (column)
             _X = @views X[:, (idx_nonrand % num_examples) + 1]
@@ -61,7 +61,7 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
                 e += dilation
             end
 
-            for gamma_index in (9 ÷ 2) + 1:9
+            for gamma_index in (9 ÷ 2) + 2:9
                 C_alpha[begin:end - s + 1] += @views A[s:end]
                 C_gamma[begin:end - s + 1, gamma_index] = @views G[s:end]
                 s += dilation
@@ -70,10 +70,9 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
             i0, i1, i2 = @views INDICES[:, kernel_index]
             C = C_alpha + @views C_gamma[:, i0] + @views C_gamma[:, i1] + @views C_gamma[:, i2]
 
-            q = quantiles[feature_index_start:feature_index_end]
-            biases[feature_index_start:feature_index_end] = quantile(C, quantiles[feature_index_start:feature_index_end])
+            biases[feature_index_start + 1:feature_index_end] = quantile(C, quantiles[feature_index_start + 1:feature_index_end])
 
-            feature_index_start = feature_index_end + 1
+            feature_index_start = feature_index_end
         end
     end
 
@@ -93,10 +92,10 @@ function fit_dilations(input_length::Unsigned, num_features::Unsigned, max_dilat
     num_features_per_dilation = floor.(Unsigned, (num_features_per_dilation * multiplier))
 
     remainder = num_features_per_kernel - sum(num_features_per_dilation)
-    i = 0
+    i = 1
     while remainder > 0
-        @inbounds num_features_per_dilation[i + 1] += 1
-        i = (i + 1) % length(num_features_per_dilation)
+        num_features_per_dilation[i] += 1
+        i = (i % length(num_features_per_dilation)) + 1
         remainder -= 1
     end
 
@@ -104,7 +103,7 @@ function fit_dilations(input_length::Unsigned, num_features::Unsigned, max_dilat
 end
 
 
-function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_dilations_per_kernel::Unsigned=Unsigned(32))::Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}} where {T <: AbstractFloat}
+function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_dilations_per_kernel::Unsigned=Unsigned(32))::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}} where {T <: AbstractFloat}
     X = convert(Matrix{T}, X)
 
     # Number of samples, sample length
@@ -118,14 +117,14 @@ function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_
 
     biases = fit_biases(X, dilations, num_features_per_dilation, quantiles)
 
-    return dilations, num_features_per_dilation, biases
+    return (dilations=dilations, num_features_per_dilation=num_features_per_dilation, biases=biases)
 end
 
 
 function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, num_features_per_dilation::AbstractVector{Unsigned}, biases::AbstractVector{T})::AbstractMatrix{T} where {T <: AbstractFloat}
     input_length, num_examples = size(X)
 
-    features = zeros(T, (num_examples, NUM_KERNELS * sum(num_features_per_dilation)))
+    features = zeros(T, (NUM_KERNELS * sum(num_features_per_dilation), num_examples))
 
     for example_index in 1:num_examples
         _X = @views X[:, example_index]
@@ -154,29 +153,31 @@ function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, nu
                 e += dilation
             end
 
-            for gamma_index in (9 ÷ 2) + 1: 9
+            for gamma_index in (9 ÷ 2) + 2: 9
                 C_alpha[begin:end - s + 1] += @views A[s:end]
                 C_gamma[begin:end - s + 1, gamma_index] = @views G[s:end]
                 s += dilation
             end
 
+            _padding0 = (dilation_index - 1) % 2
             for kernel_index in 1:NUM_KERNELS
                 feature_index_end = feature_index_start + num_features_this_dilation
 
                 i0, i1, i2 = @views INDICES[:, kernel_index]
                 C = C_alpha + @views C_gamma[:, i0] + @views C_gamma[:, i1] + @views C_gamma[:, i2]
 
-                if (((dilation_index - 1) % 2) + (kernel_index - 1)) % 2 == 1
-                    for feature_count in 1:num_features_this_dilation - 1
-                        features[example_index, feature_index_start + feature_count] = mean(T, C .> biases[feature_index_start + feature_count])
+                _padding1 = (_padding0 + (kernel_index - 1)) % 2
+                if _padding1 == 0
+                    for feature_count in 1:num_features_this_dilation
+                        features[feature_index_start + feature_count, example_index] = mean(T, C .> biases[feature_index_start + feature_count])
                     end
                 else
-                    for feature_count in 1:num_features_this_dilation - 1
-                        features[example_index, feature_index_start + feature_count] = mean(T, C[padding + 1:end - padding] .> biases[feature_index_start + feature_count])
+                    for feature_count in 1:num_features_this_dilation
+                        features[feature_index_start + feature_count, example_index] = mean(T, C[padding + 1:end - padding] .> biases[feature_index_start + feature_count])
                     end
                 end
 
-                feature_index_start = feature_index_end + 1
+                feature_index_start = feature_index_end
             end
         end
     end
@@ -190,14 +191,17 @@ MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface
     max_dilations_per_kernel::Unsigned = Unsigned(32)::(0 < _)
 end
 
-
-function MLJModelInterface.fit(model::MiniRocketModel, verbosity, X::AbstractMatrix{T})::Tuple{Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}, Nothing, Nothing} where {T <: AbstractFloat}
+function MLJModelInterface.fit(model::MiniRocketModel, verbosity, X::AbstractMatrix{T})::Tuple{NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}}, Nothing, Nothing} where {T <: AbstractFloat}
     f_res = fit(X, num_features = model.num_features, max_dilations_per_kernel = model.max_dilations_per_kernel)
     return f_res, nothing, nothing
 end
 
-function MLJModelInterface.transform(model::MiniRocketModel, fitresult::Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}, Xnew::AbstractMatrix{T})::AbstractMatrix{T} where {T <: AbstractFloat}
-    return transform(Xnew, dilations = fitresult[1], num_features_per_dilation = fitresult[2], biases = fitresult[3])
+function MLJModelInterface.transform(model::MiniRocketModel, fitresult::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}}, Xnew::AbstractMatrix{T})::AbstractMatrix{T} where {T <: AbstractFloat}
+    return transform(Xnew, dilations = fitresult.dilations, num_features_per_dilation = fitresult.num_features_per_dilation, biases = fitresult.biases)
+end
+
+function MLJModelInterface.fitted_params(model::MiniRocketModel, fitresult::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}})::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}} where {T <: AbstractFloat}
+    return fitresult
 end
 
 end

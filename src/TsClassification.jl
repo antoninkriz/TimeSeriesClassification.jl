@@ -23,7 +23,8 @@ MLJModelInterface.metadata_pkg.(
 MLJModelInterface.metadata_model(
     MiniRocketModel,
     input_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
-    output_scitype = Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{MLJModelInterface.Continuous}},
+    output_scitype = AbstractMatrix{MLJModelInterface.Continuous},
+    weights=false,
     descr = "MiniRocket model",
     load_path = "TsClassification.MiniRocketModel",
 )
