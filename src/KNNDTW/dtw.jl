@@ -6,6 +6,7 @@ function dtw_with_sakoe_chiba_radius(x::AbstractVector{T}, y::AbstractVector{T};
     # TODO
 end
 
+# TODO: Real -> AbstractFloat
 function dtw_with_itakura_max_slope(x::AbstractVector{T}, y::AbstractVector{T}; itakura_max_slope::T2) where {T <: AbstractFloat, T2 <: Real}
     # TODO
 end
@@ -19,6 +20,7 @@ function dtw(x::AbstractVector{T}, y::AbstractVector{T}) where {T <: AbstractFlo
         x, y = y, x
     end
 
+    # TODO: Reduce memory allocations by checking for previous allocations
     M = zeros(T, row_count, col_count)
     M[1, 1] = dist(x[1], y[1])
 

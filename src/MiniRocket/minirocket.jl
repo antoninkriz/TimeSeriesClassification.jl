@@ -28,6 +28,7 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
 
     feature_index_start = 0
 
+    # TODO: Make this work for unshuffled datasets
     # This will work ONLY with the assumption that the dataset is already shuffled!
     # Also, this index starts from zero because it's used with modulo operation.
     idx_nonrand = 0
@@ -47,8 +48,10 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
             A = -_X
             G = _X * 3
 
+            # TODO: In-place with reduced memory allocations
             C_alpha = copy(A)
 
+            # TODO: In-place with reduced memory allocations using fill!
             C_gamma = zeros(T, input_length, 9)
             C_gamma[:, (9 ÷ 2) + 1] = G
 
@@ -70,6 +73,7 @@ function fit_biases(X::AbstractMatrix{T}, dilations::AbstractVector{Unsigned}, n
             i0, i1, i2 = @views INDICES[:, kernel_index]
             C = C_alpha + @views C_gamma[:, i0] + @views C_gamma[:, i1] + @views C_gamma[:, i2]
 
+            # TODO: In-place with reduced memory allocations
             biases[feature_index_start + 1:feature_index_end] = quantile(C, quantiles[feature_index_start + 1:feature_index_end])
 
             feature_index_start = feature_index_end
@@ -104,6 +108,7 @@ end
 
 
 function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_dilations_per_kernel::Unsigned=Unsigned(32))::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}} where {T <: AbstractFloat}
+    # TODO: Do I need this?
     X = convert(Matrix{T}, X)
 
     # Number of samples, sample length
@@ -113,6 +118,7 @@ function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_
 
     num_features_per_kernel = sum(num_features_per_dilation)
 
+    # TODO: Can be array comprehention
     quantiles = map(x -> (x * ((sqrt(T(5)) + 1) / 2)) % 1, 1:(NUM_KERNELS * num_features_per_kernel))
 
     biases = fit_biases(X, dilations, num_features_per_dilation, quantiles)
@@ -139,9 +145,12 @@ function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, nu
             padding = ((9 - 1) * dilation) ÷ 2
             num_features_this_dilation = @views num_features_per_dilation[dilation_index]
 
+            # TODO: In-place with reduced memory allocations
             C_alpha = copy(A)
 
+            # TODO: In-place with reduced memory allocations using fill!
             C_gamma = zeros(T, input_length, 9)
+            # TODO: This might be changed from columns to rows to speed up the sums of 
             C_gamma[:, (9 ÷ 2) + 1] = G
 
             s = dilation + 1
@@ -149,11 +158,12 @@ function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, nu
 
             for gamma_index in 1:(9 ÷ 2)
                 C_alpha[end - e + 1:end] += @views A[begin:e]
+                # Maybe there's no need do this whole C_gamma thing and the whole thing can be done directly in the C = C_alpha + ... part?
                 C_gamma[end - e + 1:end, gamma_index] = @views G[begin:e]
                 e += dilation
             end
 
-            for gamma_index in (9 ÷ 2) + 2: 9
+            for gamma_index in (9 ÷ 2) + 2:9
                 C_alpha[begin:end - s + 1] += @views A[s:end]
                 C_gamma[begin:end - s + 1, gamma_index] = @views G[s:end]
                 s += dilation
@@ -169,10 +179,12 @@ function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, nu
                 _padding1 = (_padding0 + (kernel_index - 1)) % 2
                 if _padding1 == 0
                     for feature_count in 1:num_features_this_dilation
+                        # Remove T from mean and maybe even replace with T(sum/length)
                         features[feature_index_start + feature_count, example_index] = mean(T, C .> biases[feature_index_start + feature_count])
                     end
                 else
                     for feature_count in 1:num_features_this_dilation
+                        # Remove T from mean and maybe even replace with T(sum/length)
                         features[feature_index_start + feature_count, example_index] = mean(T, C[padding + 1:end - padding] .> biases[feature_index_start + feature_count])
                     end
                 end
@@ -200,7 +212,7 @@ function MLJModelInterface.transform(model::MiniRocketModel, fitresult::NamedTup
     return transform(Xnew, dilations = fitresult.dilations, num_features_per_dilation = fitresult.num_features_per_dilation, biases = fitresult.biases)
 end
 
-function MLJModelInterface.fitted_params(model::MiniRocketModel, fitresult::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}})::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}} where {T <: AbstractFloat}
+function MLJModelInterface.fitted_params(::MiniRocketModel, fitresult::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}})::NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}} where {T <: AbstractFloat}
     return fitresult
 end
 
