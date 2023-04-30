@@ -3,6 +3,7 @@ module _MiniRocket
 using StaticArrays: SMatrix
 using Statistics: quantile, mean
 import MLJModelInterface
+import ScientificTypesBase
 
 using .._Utils: sorted_unique_counts, logspace
 
@@ -202,14 +203,14 @@ MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface
     max_dilations_per_kernel::Unsigned = Unsigned(32)::(0 < _)
 end
 
-function MLJModelInterface.reformat(::MiniRocketModel, (X, type::Symbol))
+function MLJModelInterface.reformat(::MiniRocketModel, (X, type))
     @assert type in (:row_based, :column_based)
 
     (MLJModelInterface.matrix(X, transpose=type == :row_based),)
 end
 MLJModelInterface.selectrows(::MiniRocketModel, I, Xmatrix) = (view(Xmatrix, :, I),)
 
-function MLJModelInterface.fit(model::MiniRocketModel, _, X::AbstractMatrix{T})::Tuple{NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}}, Nothing, Nothing} where {T <: AbstractFloat}
+function MLJModelInterface.fit(model::MiniRocketModel, verbosity, X::AbstractMatrix{T})::Tuple{NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}}, Nothing, Nothing} where {T <: AbstractFloat}
     f_res = fit(X, num_features = model.num_features, max_dilations_per_kernel = model.max_dilations_per_kernel)
     return f_res, nothing, nothing
 end

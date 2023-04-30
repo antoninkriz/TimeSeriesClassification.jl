@@ -2,7 +2,7 @@ module _Utils
 
 export sorted_unique_counts, logspace
 
-function sorted_unique_counts(arr::AbstractVector{T})::Tuple{AbstractVector{T},AbstractVector{Unsigned}} where {T}
+function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T},Vector{Unsigned}} where {T}
     if isempty(arr)
         return [], []
     end

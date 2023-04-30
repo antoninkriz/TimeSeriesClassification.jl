@@ -1,6 +1,7 @@
 module TsClassification
 
 import MLJModelInterface
+import ScientificTypesBase
 
 include("MiniRocket/MiniRocket.jl")
 include("KNNDTW/KNNDTW.jl")
@@ -14,7 +15,7 @@ MLJModelInterface.metadata_pkg.(
     (MiniRocketModel),
     name = "TsClassification",
     uuid = "4869f98a-92d2-4a27-bbf6-5599fe134177",
-    url = "TODO",
+    url = "https://github.com/antoninkriz/julia-ts-classification",
     julia = true,
     license = "TODO",
     is_wrapper = false,
@@ -22,11 +23,19 @@ MLJModelInterface.metadata_pkg.(
 
 MLJModelInterface.metadata_model(
     MiniRocketModel,
-    input_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
-    output_scitype = AbstractMatrix{MLJModelInterface.Continuous},
-    weights=false,
+    input_scitype = Tuple{Tuple{AbstractMatrix{ScientificTypesBase.Continuous}, ScientificTypesBase.Unknown}},
+    output_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
     descr = "MiniRocket model",
     load_path = "TsClassification.MiniRocketModel",
 )
+
+"""
+$(MLJModelInterface.doc_header(MiniRocketModel))
+
+### MiniRocketModel
+
+A model type for constructing MiniRocket transformer.
+"""
+MiniRocketModel
 
 end

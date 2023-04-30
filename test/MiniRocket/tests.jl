@@ -1,6 +1,7 @@
 using TsClassification: MiniRocketModel
 using Test: @testset, @test
 using MLJ: machine, fit!, fitted_params, transform
+import MLJModelInterface
 
 
 const M_FIT1::Matrix{Float64} = [
@@ -142,32 +143,47 @@ const BIASES2::Vector{Float64} = [0.0, -6.0, 11.5986671312232, 0.0, -2.934221912
 
 @testset "MiniRocket.jl - fit() can run" begin
     m = MiniRocketModel(num_features=Unsigned(84))
-    x = machine(m, M_FIT1)
+    x = machine(m, (M_FIT1, :column_based))
     fit!(x, verbosity=0)
 
-    result = fitted_params(x)
-    @test result.dilations == DILATIONS1
-    @test result.num_features_per_dilation == NUM_FEATURES_PER_DILATION1
-    @test result.biases ≈ BIASES1
+    result_machine = fitted_params(x)
+    result_model = MLJModelInterface.fit(m, false, M_FIT1)[1]
+
+    @test result_machine.dilations == result_model.dilations
+    @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
+    @test result_machine.biases ≈ result_model.biases
+
+    @test result_machine.dilations == DILATIONS1
+    @test result_machine.num_features_per_dilation == NUM_FEATURES_PER_DILATION1
+    @test result_machine.biases ≈ BIASES1
 end
 
 
 @testset "MiniRocket.jl - fit() small" begin
     m = MiniRocketModel(num_features=Unsigned(190))
-    x = machine(m, M_FIT2)
+    x = machine(m, (M_FIT2, :column_based))
     fit!(x, verbosity=0)
 
-    result = fitted_params(x)
-    @test result.dilations == DILATIONS2
-    @test result.num_features_per_dilation == NUM_FEATURES_PER_DILATION2
-    @test result.biases ≈ BIASES2
+    result_machine = fitted_params(x)
+    result_model = MLJModelInterface.fit(m, false, M_FIT2)[1]
+
+    @test result_machine.dilations == result_model.dilations
+    @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
+    @test result_machine.biases ≈ result_model.biases
+
+    @test result_machine.dilations == DILATIONS2
+    @test result_machine.num_features_per_dilation == NUM_FEATURES_PER_DILATION2
+    @test result_machine.biases ≈ BIASES2
 end
 
 @testset "MiniRocket.jl - transform() can run" begin
     m = MiniRocketModel(num_features=Unsigned(84))
-    x = machine(m, M_FIT1)
+    x = machine(m, (M_FIT1, :column_based))
     fit!(x, verbosity=0)
 
-    t = transform(x, TRANSFORM1)
-    @test t ≈ TRANSFORMED1
+    t_machine = transform(x, (TRANSFORM1, :column_based))
+    t_model = MLJModelInterface.transform(m, MLJModelInterface.fit(m, false, M_FIT1)[1], TRANSFORM1)
+
+    @test t_machine ≈ t_model
+    @test t_machine ≈ TRANSFORMED1
 end

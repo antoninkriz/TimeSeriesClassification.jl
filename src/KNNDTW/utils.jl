@@ -1,6 +1,6 @@
 module _Utils
 
-import Base.length, Base.push!, Base.max
+import Base.isempty, Base.empty!, Base.max, Base.push!
 
 export euclidean_distance, FastMaxHeap
 
@@ -18,6 +18,11 @@ end
 FastMaxHeap{T, Tpayload}(capacity::Int64) where {T <: Real, Tpayload} = FastMaxHeap(Vector{Tuple{T, Tpayload}}(undef, capacity), 0)
 
 Base.isempty(heap::FastMaxHeap) = heap.n === 0
+
+Base.empty!(heap::FastMaxHeap) = begin
+    heap.n = 0
+    return heap
+end
 
 Base.max(heap::FastMaxHeap) = heap.data[1]
 
@@ -46,6 +51,8 @@ Base.max(heap::FastMaxHeap) = heap.data[1]
 
             if largest === k
                 break
+            end
+
             heap.data[k], heap.data[largest] = heap.data[largest], heap.data[k]
             k = largest
         end
