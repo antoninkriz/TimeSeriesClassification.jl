@@ -2,7 +2,6 @@ module _MiniRocket
 
 using StaticArrays: SMatrix
 using Statistics: quantile, mean
-using Base.Threads: @threads
 import MLJModelInterface
 
 using .._Utils: sorted_unique_counts, logspace
@@ -177,7 +176,7 @@ function transform(X::AbstractMatrix{T}; dilations::AbstractVector{Unsigned}, nu
                 C = C_alpha + @views C_gamma[:, i0] + @views C_gamma[:, i1] + @views C_gamma[:, i2]
 
                 _padding1 = (_padding0 + (kernel_index - 1)) % 2
-                if _padding1 == 0
+                if _padding1 === 0
                     for feature_count in 1:num_features_this_dilation
                         # Remove T from mean and maybe even replace with T(sum/length)
                         features[feature_index_start + feature_count, example_index] = mean(T, C .> biases[feature_index_start + feature_count])
@@ -203,7 +202,14 @@ MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface
     max_dilations_per_kernel::Unsigned = Unsigned(32)::(0 < _)
 end
 
-function MLJModelInterface.fit(model::MiniRocketModel, verbosity, X::AbstractMatrix{T})::Tuple{NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}}, Nothing, Nothing} where {T <: AbstractFloat}
+function MLJModelInterface.reformat(::MiniRocketModel, (X, type::Symbol))
+    @assert type in (:row_based, :column_based)
+
+    (MLJModelInterface.matrix(X, transpose=type == :row_based),)
+end
+MLJModelInterface.selectrows(::MiniRocketModel, I, Xmatrix) = (view(Xmatrix, :, I),)
+
+function MLJModelInterface.fit(model::MiniRocketModel, _, X::AbstractMatrix{T})::Tuple{NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{AbstractVector{Unsigned}, AbstractVector{Unsigned}, AbstractVector{T}}}, Nothing, Nothing} where {T <: AbstractFloat}
     f_res = fit(X, num_features = model.num_features, max_dilations_per_kernel = model.max_dilations_per_kernel)
     return f_res, nothing, nothing
 end

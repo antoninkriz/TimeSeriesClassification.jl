@@ -22,7 +22,7 @@ function sorted_unique_counts(arr::AbstractVector{T})::Tuple{AbstractVector{T},A
 
     pos = 1
     @inbounds for x in @views arr[2:end]
-        if x == unq[pos]
+        if x === unq[pos]
             cnt[pos] += 1
         else
             pos += 1
