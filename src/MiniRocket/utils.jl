@@ -2,7 +2,7 @@ module _Utils
 
 export sorted_unique_counts, logspace
 
-function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T},Vector{Unsigned}} where {T}
+function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T},Vector{Int64}} where {T}
     if isempty(arr)
         return [], []
     end
@@ -15,7 +15,7 @@ function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T},Vector{Unsigned}}
     end
 
     unq = similar(arr, uniq_count)
-    cnt = zeros(Unsigned, uniq_count)
+    cnt = zeros(Int64, uniq_count)
 
     @inbounds unq[1] = arr[1]
     @inbounds cnt[1] = 1

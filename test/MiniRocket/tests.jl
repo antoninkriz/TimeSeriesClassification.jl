@@ -1,5 +1,6 @@
 using TsClassification: MiniRocketModel
 using Test: @testset, @test
+using Random: Xoshiro
 using MLJ: machine, fit!, fitted_params, transform
 import MLJModelInterface
 
@@ -13,10 +14,10 @@ const M_FIT1::Matrix{Float64} = [
     6
     7
     8
-    9
-][:, :]
-const DILATIONS1 = Unsigned[0x0000000000000001]
-const NUM_FEATURES_PER_DILATION1 = Unsigned[0x0000000000000001]
+    9;;
+]
+const DILATIONS1 = [1]
+const NUM_FEATURES_PER_DILATION1 = [1]
 const BIASES1::Vector{Float64} = [-15.111456180001682, -22.222912360003363, 9.993788759969732, -9.66873708001009, -15.0, -4.003105620015134, -10.170289890017656, 19.20427863991256, -10.006211240030268, -14.114561800016816, -0.8390269700277031, -8.337474160020179, -23.795721360087555, -2.58212586012948, -9.835921350012597, 4.86680447989238, -3.9473775300143075, -15.024844960121072, 6.646997739904236, -3.1145618000168156, 7.0, 1.5479640399630625, -3.0, 3.0, 1.8203932499368989, -23.14251238015322, 6.990683139954626, -16.043478680211877, 19.99051006968284, -9.702898900176365, -12.0, 1.6501033599192851, -6.0, -22.15804048022892, -1.455314650323544, -9.0, 6.814182009906631, -3.0, -13.38716408026221, 8.625258399798213, -3.0, 10.0, 3.0, -0.45203596003693747, 3.0, 3.873015719922705, -21.334541610276915, 9.0, -14.5760876903704, 26.776741499453124, -4.421325900428656, -5.795721360087555, 0.4641122995542446, 0.0, 29.219460599444574, 2.637680879858749, 0.0, 6.0, 2.712042689950408, -6.780539400554289, 7.201173019897396, 3.2691505196874004, 12.0, 12.0, -2.244651700109216, 13.96583817983344, 5.266217969943682, -9.316080960457839, 6.464285369825916, 3.2971010998235215, 12.0, 8.962732559818392, -11.47705399042934, 16.752242679875508, 7.6407864998739115, 19.646651599361576, 12.0, 1.1449257190822664, 17.597480889933536, 8.584539199058327, -23.821431671568007, 18.860593239862283, -6.006903521116328, 27.0]
 const TRANSFORM1::Matrix{Float64} = [
     1 -√1
@@ -136,18 +137,21 @@ const M_FIT2::Matrix{Float64} = [
     2 5 8 0  1 9 17
     3 6 7 0 -1 9 18
 ]
-const DILATIONS2 = Unsigned[0x0000000000000001, 0x0000000000000002]
-const NUM_FEATURES_PER_DILATION2 = Unsigned[0x0000000000000001, 0x0000000000000001]
+const DILATIONS2 = [1, 2]
+const NUM_FEATURES_PER_DILATION2 = [1, 1]
 const BIASES2::Vector{Float64} = [0.0, -6.0, 11.5986671312232, 0.0, -2.9342219125178666, 0.0, -22.085598048862558, 6.15786740995712, 0.0, -6.8026657375536, 0.0, 0.07893370497856012, -21.73039637645931, 3.092089322474987, -3.0, 9.0, -1.0, 0.0, 4.0, 0.0, 16.0, 0.0, -3.0, 5.0, 0.0, -5.8289769725465135, 0.0, -16.342392195450238, 5.07226936109447, 3.0, -2.776527572832137, 0.0, -2.0, -24.98719052304726, 6.0, 0.0, 7.0, -1.0, 0.0, 3.2631123499285337, 0.0, 19.0, 3.0, 0.0, 3.0, 0.0, -3.9542149441703174, 0.0, -16.5991863420371, 5.328890437410607, 3.0, -1.0, 0.0, -2.0, 25.75601533036479, 9.0, -3.3751947040552466, 6.0, -0.11190928385538257, 0.0, 4.0, 0.0, 20.74320585341205, -1.7370607203430382, 0.0, 9.0, 0.0, -8.0, 0.0, -4.85598048862505, 3.0, 3.0, -13.03963992276067, 0.0, -2.0, 31.499221183779014, 12.019473820837192, -3.0, 6.0982344555438175, -1.0, 0.0, 2.5393803173536753, 0.0, 47.8677515439486, 0.059113743598345536, -20.17154223826796, 18.14453872218894, 0.0, -5.914575021408922, 0.0, -37.802838807825594, 6.605158404835748, 0.0, -18.908429888340635, 0.0, -0.3685303601715191, 9.0, 1.7355030879010656, -4.0, 7.262246998569708, -5.178206582151205, 0.0, 1.0, 0.0, 14.762679674249966, 0.0, -8.0, 2.0, 0.0, 6.7235589623032865, -9.0, -37.05314168080042, 6.0, 1.7498701972965023, -20.204863957688048, 0.0, -2.0, 9.0, 12.282759241037297, -1.4213259004283145, 7.0, -1.0, 0.0, 1.0, 0.0, 18.0, 0.0, -7.158040480228692, 6.34853732851937, 0.0, 5.361692946015978, -1.1855632071236357, -39.12575718243707, 5.881426372260648, 3.0, -14.105418010243227, 0.0, -2.0, 21.72883874401299, 12.0, -3.572528966501949, 4.868097684492227, 2.0, 0.0, 2.4537822684907837, -9.356759304846037, 15.0, -1.052968610529092, 1.4402805104519985, 11.960013936696186, 0.0, 3.9996538594573394, 9.0, -17.7663141499537, 4.55868106791857, 0.05227632944280458, -22.0, 0.0, -2.0, 27.472044597427214, 13.677081625388041, -5.0, 10.572182825958805, -13.842478730585299, 0.0, 1.0, -30.613553451431812, 40.576078045494]
+const BIASES2_RNG::Vector{Float64} = [0.0, 0.0, 11.5986671312232, 0.0, 0.0, 0.0, -3.7237320325750396, 27.47360222987136, 0.6776008362017603, -6.8026657375536, 3.434135377382262, 0.0, -21.73039637645931, 3.0, -3.0, 0.0, 0.0, -4.6447983275964795, 0.0, 0.0, 9.0, 0.0, -1.0, 0.0, -1.0066643438840899, -6.0, 6.0, -5.894928130300158, 19.763025814792627, 2.0, -3.0, 0.0, -1.1317292452359595, -8.0, 2.0, 0.0, 4.0, -0.7500432675678326, -7.243465458819649, 3.2631123499285337, 0.0, 19.0, 3.0, 0.0, 3.7960013936695702, -3.0, -15.099272877174698, 2.0, -2.0, 4.0, 3.0, -1.0, 4.0, 0.0, 0.0, 0.0, 0.0, 4.0, -0.11190928385538257, -5.815994425321236, 4.0, -5.329582718496411, 7.6576078045494, 6.0, -1.0, 9.0, 6.0, -11.421672040972908, 6.0, 0.0, 0.0, 3.0, -5.0, 0.0, -2.0, 16.499740394593005, -1.9870174527752056, -2.0, 6.0982344555438175, 0.0, 0.0, 3.0, -3.0, 4.0, 3.118227487196691, -55.17154223826796, 36.43361616656682, -18.0, -10.829150042817844, -6.0, -37.802838807825594, 23.0, 3.0, -13.14505793300438, 3.0, 0.0, 7.41414234572963, 0.6446252573250888, -4.5463908017805466, 7.262246998569708, -15.0, -18.0, 7.3550286021317675, -2.315907890186054, 7.0, -6.211009090757784, -23.592348927882767, 0.0, -5.783018846444776, 28.894235849213146, 0.23013677105183206, -2.0, 27.0, 3.4997403945930046, -20.204863957688048, 4.763025814792627, -21.0, 0.0, 12.282759241037297, -9.210662950214157, 9.0, 0.0, -18.0, 9.63129656955715, 0.0, 7.6576078045494, -1.0, -3.316080960457384, 0.0, -2.0, 9.0, -3.0, 0.0, 0.0, -1.6119958189912893, -21.73792607170259, 1.4011597985053186, -17.09226239274662, 37.82863083200289, 9.0, -3.572528966501949, 4.868097684492227, 0.0, 0.0, 0.0, -18.396399227606707, 15.0, -1.052968610529092, 1.4004675174199974, 3.986671312232062, -1.0, 3.9996538594573394, -1.0, -8.88315707497685, 4.55868106791857, 2.0522763294428046, -47.80370415918321, 18.11788134665258, 3.7293579548279467, 23.262246998570674, 3.0, -14.93439498278974, 4.572182825958805, -2.0, 36.0, 0.0, -15.803011878095958, 2.1050718696996]
 
 
 @testset "MiniRocket.jl - fit() can run" begin
-    m = MiniRocketModel(num_features=Unsigned(84))
-    x = machine(m, (M_FIT1, :column_based))
-    fit!(x, verbosity=0)
+    m_machine = MiniRocketModel(num_features=Unsigned(84), rng=Xoshiro(1337))
+    m_model = MiniRocketModel(num_features=Unsigned(84), rng=Xoshiro(1337))
 
-    result_machine = fitted_params(x)
-    result_model = MLJModelInterface.fit(m, false, M_FIT1)[1]
+    mach = machine(m_machine, (M_FIT1, :column_based))
+    fit!(mach, verbosity=0)
+
+    result_machine = fitted_params(mach)
+    result_model = MLJModelInterface.fit(m_model, false, M_FIT1)[1]
 
     @test result_machine.dilations == result_model.dilations
     @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
@@ -158,13 +162,31 @@ const BIASES2::Vector{Float64} = [0.0, -6.0, 11.5986671312232, 0.0, -2.934221912
     @test result_machine.biases ≈ BIASES1
 end
 
+@testset "MiniRocket.jl - fit() - random" begin
+    m_machine = MiniRocketModel(num_features=Unsigned(190), rng=Xoshiro(1337))
+    m_model = MiniRocketModel(num_features=Unsigned(190), rng=Xoshiro(1337))
 
-@testset "MiniRocket.jl - fit() small" begin
-    m = MiniRocketModel(num_features=Unsigned(190))
-    x = machine(m, (M_FIT2, :column_based))
-    fit!(x, verbosity=0)
+    mach = machine(m_machine, (M_FIT2, :column_based))
+    fit!(mach, verbosity=0)
 
-    result_machine = fitted_params(x)
+    result_machine = fitted_params(mach)
+    result_model = MLJModelInterface.fit(m_model, false, M_FIT2)[1]
+
+    @test result_machine.dilations == result_model.dilations
+    @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
+    @test result_machine.biases ≈ result_model.biases
+
+    @test result_machine.dilations == DILATIONS2
+    @test result_machine.num_features_per_dilation == NUM_FEATURES_PER_DILATION2
+    @test result_machine.biases ≈ BIASES2_RNG
+end
+
+@testset "MiniRocket.jl - fit() - shuffled" begin
+    m = MiniRocketModel(num_features=Unsigned(190), shuffled=true)
+    mach = machine(m, (M_FIT2, :column_based))
+    fit!(mach, verbosity=0)
+
+    result_machine = fitted_params(mach)
     result_model = MLJModelInterface.fit(m, false, M_FIT2)[1]
 
     @test result_machine.dilations == result_model.dilations
@@ -177,12 +199,14 @@ end
 end
 
 @testset "MiniRocket.jl - transform() can run" begin
-    m = MiniRocketModel(num_features=Unsigned(84))
-    x = machine(m, (M_FIT1, :column_based))
-    fit!(x, verbosity=0)
+    m_machine = MiniRocketModel(num_features=Unsigned(84), rng=Xoshiro(1337))
+    m_model = MiniRocketModel(num_features=Unsigned(84), rng=Xoshiro(1337))
 
-    t_machine = transform(x, (TRANSFORM1, :column_based))
-    t_model = MLJModelInterface.transform(m, MLJModelInterface.fit(m, false, M_FIT1)[1], TRANSFORM1)
+    mach = machine(m_machine, (M_FIT1, :column_based))
+    fit!(mach, verbosity=0)
+
+    t_machine = transform(mach, (TRANSFORM1, :column_based))
+    t_model = MLJModelInterface.transform(m_model, MLJModelInterface.fit(m_model, false, M_FIT1)[1], TRANSFORM1)
 
     @test t_machine ≈ t_model
     @test t_machine ≈ TRANSFORMED1
