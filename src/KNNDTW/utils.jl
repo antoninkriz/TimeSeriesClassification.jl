@@ -1,6 +1,6 @@
 module _Utils
 
-import Base.isempty, Base.empty!, Base.max, Base.push!
+import Base.isempty, Base.empty!, Base.max, Base.length, Base.push!
 
 export euclidean_distance, FastMaxHeap
 
@@ -12,12 +12,14 @@ end
 
 mutable struct FastMaxHeap{T, Tpayload}
     data::Vector{Tuple{T, Tpayload}}
-    n::Int64
+    n::UInt64
 end
 
-FastMaxHeap{T, Tpayload}(capacity::Int64) where {T <: Real, Tpayload} = FastMaxHeap(Vector{Tuple{T, Tpayload}}(undef, capacity), 0)
+function FastMaxHeap{T, Tpayload}(capacity::UInt64) where {T, Tpayload}
+    FastMaxHeap{T, Tpayload}(Vector{Tuple{T, Tpayload}}(undef, capacity), 0)
+end
 
-Base.isempty(heap::FastMaxHeap) = heap.n === 0
+Base.isempty(heap::FastMaxHeap) = heap.n == 0
 
 Base.empty!(heap::FastMaxHeap) = begin
     heap.n = 0
@@ -26,12 +28,14 @@ end
 
 Base.max(heap::FastMaxHeap) = heap.data[1]
 
+Base.length(heap::FastMaxHeap) = heap.n
+
 @inline parent(i) =  (i - 1) ÷ 2 + 1
 @inline left(i) = (2 * i + 1) + 1
 @inline right(i) = (2 * i + 2) + 1
 
-@inbounds function Base.push!(heap::FastMaxHeap{T, Tpayload}, value::Tuple{T, Tpayload}) where {T, Tpayload}
-    if heap.n === length(heap.data)
+@inbounds function Base.push!(heap::FastMaxHeap, value)
+    if heap.n == length(heap.data)
         heap.data[1] = heap.data[heap.n]
         heap.n -= 1
 
@@ -49,7 +53,7 @@ Base.max(heap::FastMaxHeap) = heap.data[1]
                 largest = r
             end
 
-            if largest === k
+            if largest == k
                 break
             end
 
@@ -62,7 +66,7 @@ Base.max(heap::FastMaxHeap) = heap.data[1]
     i = heap.n
     heap.data[i] = value
 
-    if i === 1
+    if i == 1
         return
     end
 

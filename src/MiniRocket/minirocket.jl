@@ -194,7 +194,7 @@ function transform(X::AbstractMatrix{T}; dilations::Vector{Int64}, num_features_
                 end
 
                 _padding1 = (_padding0 + (kernel_index - 1)) % 2
-                if _padding1 === 0
+                if _padding1 == 0
                     for feature_count in 1:num_features_this_dilation
                         features[feature_index_start + feature_count, example_index] = sum(C .> biases[feature_index_start + feature_count]) / length(C)
                     end

@@ -7,28 +7,28 @@ export dtw, dtw!, dtw_with_itakura_max_slope, dtw_with_itakura_max_slope!, dtw_w
 
 abstract type DTWType end
 
-mutable struct DTW{T <: AbstractFloat} <: DTWType
+mutable struct DTW <: DTWType
     distance::Function
-    matrix::Matrix{T}
+    matrix::Union{Nothing, Matrix}
 end
 
-DTW{T}(;distance::Function = euclidean_distance, matrix::Matrix{T} = T[;;]) where {T <: AbstractFloat} = DTW(distance, matrix)
+DTW(;distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing) where {T <: AbstractFloat} = DTW(distance, matrix)
 
-mutable struct DTWSakoeChiba{T <: AbstractFloat} <: DTWType
+mutable struct DTWSakoeChiba <: DTWType
     distance::Function
-    matrix::Matrix{T}
+    matrix::Union{Nothing, Matrix}
     radius::Unsigned
 end
 
-DTWSakoeChiba{T}(;distance::Function = euclidean_distance, matrix::Matrix{T} = T[;;], radius::Unsigned = 0) where {T <: AbstractFloat} = DTWSakoeChiba(distance, matrix, radius)
+DTWSakoeChiba(;distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing, radius::Unsigned = 0) where {T <: AbstractFloat} = DTWSakoeChiba(distance, matrix, radius)
 
-mutable struct DTWItakura{T <: AbstractFloat} <: DTWType
+mutable struct DTWItakura <: DTWType
     distance::Function
-    matrix::Matrix{T}
+    matrix::Union{Nothing, Matrix}
     slope::Float64
 end
 
-function DTWItakura{T}(;distance::Function = euclidean_distance, matrix::Matrix{T} = T[;;], slope::Float64 = 1.0) where {T <: AbstractFloat}
+function DTWItakura(;distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing, slope::Float64 = 1.0) where {T <: AbstractFloat}
     @assert slope >= 1.0
 
     DTWItakura(distance, matrix, slope)
