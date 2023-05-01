@@ -3,6 +3,7 @@ module _MiniRocket
 using Random: AbstractRNG, GLOBAL_RNG, rand
 using StaticArrays: SMatrix
 using Statistics: quantile, quantile!
+using LoopVectorization: @turbo
 import MLJModelInterface
 import ScientificTypesBase
 
@@ -34,12 +35,11 @@ function fit_biases(X::AbstractMatrix{T}, dilations::Vector{Int64}, num_features
     idx_nonrand = 0
 
     _quantiles = zeros(T, maximum(num_features_per_dilation))
-    C_alpha = zeros(T, input_length)
-    C_gamma = zeros(T, input_length, 9)
+    C = zeros(T, input_length)
     A = zeros(T, input_length)
     G = zeros(T, input_length)
 
-    for dilation_index = eachindex(dilations)
+    @inbounds for dilation_index = eachindex(dilations)
         dilation = dilations[dilation_index]
         padding = ((9 - 1) * dilation) ÷ 2
         num_features_this_dilation = num_features_per_dilation[dilation_index]
@@ -50,30 +50,35 @@ function fit_biases(X::AbstractMatrix{T}, dilations::Vector{Int64}, num_features
             _X = @views X[:, shuffled ? ((idx_nonrand % num_examples) + 1) : (abs(rand(rng, Int64) % num_examples) + 1)]
             idx_nonrand += 1
 
-            @. A = _X * -1
-            @. G = _X * 3
+            @turbo @. A = _X * -1
+            @turbo @. G = _X * 3
 
-            copy!(C_alpha, A)
-            fill!(C_gamma, 0)
-            C_gamma[:, (9 ÷ 2) + 1] = G
+            copy!(C, A)
 
             s = dilation + 1
             e = input_length - padding
 
-            for gamma_index in 1:(9 ÷ 2)
-                C_alpha[end - e + 1:end] += @views A[begin:e]
-                C_gamma[end - e + 1:end, gamma_index] = @views G[begin:e]
-                e += dilation
+            for idx in 1:(9 ÷ 2)
+                d = e + dilation * (idx - 1)
+                @views C[end - d + 1:end] += A[begin:d]
             end
 
-            for gamma_index in (9 ÷ 2) + 2:9
-                C_alpha[begin:end - s + 1] += @views A[s:end]
-                C_gamma[begin:end - s + 1, gamma_index] = @views G[s:end]
-                s += dilation
+            for idx in (9 ÷ 2) + 2:9
+                d = s + dilation * (idx - ((9 ÷ 2) + 2))
+                @views C[begin:end - d + 1] += A[d:end]
             end
 
-            i0, i1, i2 = @views INDICES[:, kernel_index]
-            C = C_alpha + @views C_gamma[:, i0] + @views C_gamma[:, i1] + @views C_gamma[:, i2]
+            for idx in @views INDICES[:, kernel_index]
+                if idx < 5
+                    d = e + dilation * (idx - 1)
+                    @views C[end - d + 1:end] += G[begin:d]
+                elseif idx > 5
+                    d = s + dilation * (idx - ((9 ÷ 2) + 2))
+                    @views C[begin:end - d + 1] += G[d:end]
+                else
+                    C += G
+                end
+            end
 
             biases[feature_index_start + 1:feature_index_end] = @views quantile!(_quantiles[1:num_features_this_dilation], C, quantiles[feature_index_start + 1:feature_index_end])
 
@@ -128,14 +133,25 @@ function transform(X::AbstractMatrix{T}; dilations::Vector{Int64}, num_features_
 
     features = zeros(T, (NUM_KERNELS * sum(num_features_per_dilation), num_examples))
 
-    Threads.@threads for example_index in 1:num_examples
+    # Small allocations might be faster than this thing. This needs testing.
+    C_alpha_theads = zeros(T, input_length, Threads.nthreads())
+    C_theads = zeros(T, input_length, Threads.nthreads())
+    A_threads = zeros(T, input_length, Threads.nthreads())
+    G_threads = zeros(T, input_length, Threads.nthreads())
+
+    @inbounds Threads.@threads for example_index in 1:num_examples
         _X = @views X[:, example_index]
 
-        C_alpha = zeros(T, input_length)
-        C_gamma = zeros(T, input_length, 9)
+        C_alpha = @views C_alpha_theads[:, Threads.threadid()]
+        C = @views C_theads[:, Threads.threadid()]
+        A = @views A_threads[:, Threads.threadid()]
+        G = @views G_threads[:, Threads.threadid()]
 
-        A = -_X
-        G = _X * 3
+        fill!(C_alpha, 0)
+        fill!(C, 0)
+
+        @turbo @. A = _X * -1
+        @turbo @. G = _X * 3
 
         feature_index_start = 0
 
@@ -145,32 +161,37 @@ function transform(X::AbstractMatrix{T}; dilations::Vector{Int64}, num_features_
             num_features_this_dilation = num_features_per_dilation[dilation_index]
 
             copy!(C_alpha, A)
-            fill!(C_gamma, 0)
-            # TODO: This might be changed from columns to rows to speed up the sums of 
-            C_gamma[:, (9 ÷ 2) + 1] = G
 
             s = dilation + 1
             e = input_length - padding
 
-            for gamma_index in 1:(9 ÷ 2)
-                C_alpha[end - e + 1:end] += @views A[begin:e]
-                # Maybe there's no need do this whole C_gamma thing and the whole thing can be done directly in the C = C_alpha + ... part?
-                C_gamma[end - e + 1:end, gamma_index] = @views G[begin:e]
-                e += dilation
+            for idx in 1:(9 ÷ 2)
+                d = e + dilation * (idx - 1)
+                @views C_alpha[end - d + 1:end] += A[begin:d]
             end
 
-            for gamma_index in (9 ÷ 2) + 2:9
-                C_alpha[begin:end - s + 1] += @views A[s:end]
-                C_gamma[begin:end - s + 1, gamma_index] = @views G[s:end]
-                s += dilation
+            for idx in (9 ÷ 2) + 2:9
+                d = s + dilation * (idx - ((9 ÷ 2) + 2))
+                @views C_alpha[begin:end - d + 1] += A[d:end]
             end
 
             _padding0 = (dilation_index - 1) % 2
             for kernel_index in 1:NUM_KERNELS
                 feature_index_end = feature_index_start + num_features_this_dilation
 
-                i0, i1, i2 = @views INDICES[:, kernel_index]
-                C = C_alpha + @views C_gamma[:, i0] + @views C_gamma[:, i1] + @views C_gamma[:, i2]
+                copy!(C, C_alpha)
+
+                for idx in @views INDICES[:, kernel_index]
+                    if idx < 5
+                        d = e + dilation * (idx - 1)
+                        @views C[end - d + 1:end] += G[begin:d]
+                    elseif idx > 5
+                        d = s + dilation * (idx - ((9 ÷ 2) + 2))
+                        @views C[begin:end - d + 1] += G[d:end]
+                    else
+                        C += G
+                    end
+                end
 
                 _padding1 = (_padding0 + (kernel_index - 1)) % 2
                 if _padding1 === 0
