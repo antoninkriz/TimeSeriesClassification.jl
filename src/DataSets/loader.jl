@@ -2,10 +2,17 @@ module _Loader
 
 using .._Reader: read_ts_file
 
-export load_dataset, dataset_flatten_to_matrix, DEFAULT_DIR
+export load_dataset, dataset_flatten_to_matrix, DEFAULT_DIR, AbstractLoader
 
 
 const DEFAULT_DIR = ".julia_ts_classification"
+
+abstract type AbstractLoader end
+
+
+function list_available_datasets(::AbstractLoader)::Vector{Symbol}
+    @assert false "Specify a dataset Loader type to list it's available datasets"
+end
 
 
 function load_dataset(path::AbstractString, ::Type{T} = Float64, replace_missing_by::T = NaN64, missing_symbol::AbstractString="?")::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
