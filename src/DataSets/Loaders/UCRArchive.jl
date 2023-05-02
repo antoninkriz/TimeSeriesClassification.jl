@@ -25,8 +25,8 @@ function _Loader.load_dataset(::Type{UCRArchive}, name::Symbol, dataset_path::Un
         @debug "Dataset UCRArchive folder found at \"$dataset_full_path\", skipping download"
 
         @debug "Reading datasets..."
-        trainX, trainY = load_dataset(joinpath(dataset_full_path, ZIP_FOLDER, string(name), "$(name)_TRAIN.ts"))
-        testX, testY = load_dataset(joinpath(dataset_full_path, ZIP_FOLDER, string(name), "$(name)_TEST.ts"))
+        trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"))
+        testX, testY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TEST.ts"))
         return trainX, trainY, testX, testY
     end
 
@@ -53,12 +53,21 @@ function _Loader.load_dataset(::Type{UCRArchive}, name::Symbol, dataset_path::Un
 
         update!(p, now ÷ 1000)
     end
+
+    @debug "Downloading dataset"
     download(URL, tmp_file, progress=prog)
 
+    @debug "Unzipping dataset"
     unzip(tmp_file, dataset_full_path)
 
+    @debug "Moving dataset to correct path"
+    for dataset_name in readdir(joinpath(dataset_full_path, ZIP_FOLDER))
+        mv(joinpath(dataset_full_path, ZIP_FOLDER, dataset_name), joinpath(dataset_full_path, dataset_name))
+    end
+    rm(joinpath(dataset_full_path, ZIP_FOLDER))
+
     @debug "Reading datasets..."
-    trainX, trainY = load_dataset(joinpath(dataset_full_path, ZIP_FOLDER, string(name), "$(name)_TRAIN.ts"))
-    testX, testY = load_dataset(joinpath(dataset_full_path, ZIP_FOLDER, string(name), "$(name)_TEST.ts"))
+    trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"))
+    testX, testY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TEST.ts"))
     return trainX, trainY, testX, testY
 end

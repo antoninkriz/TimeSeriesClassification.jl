@@ -2,14 +2,34 @@ module _Loader
 
 using .._Reader: read_ts_file
 
-export load_dataset, DEFAULT_DIR
+export load_dataset, dataset_flatten_to_matrix, DEFAULT_DIR
 
 
 const DEFAULT_DIR = ".julia_ts_classification"
 
 
-function load_dataset(path::AbstractString, ::Type{T} = Float64, replace_nan::T = NaN64, missing_symbol::AbstractString="?")::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
-    read_ts_file(path, T, replace_nan, missing_symbol)
+function load_dataset(path::AbstractString, ::Type{T} = Float64, replace_missing_by::T = NaN64, missing_symbol::AbstractString="?")::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
+    read_ts_file(path, T, replace_missing_by, missing_symbol)
+end
+
+function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}}; interpolate::Bool=false)::Matrix{T} where {T}
+    # Is the whole dataset empty?
+    isempty(dataset) && return T[;;]
+
+    l1 = length(dataset[begin])
+    @assert length(dataset[begin]) == 1 "Dataset has more than one dimension"
+    @assert all(x -> length(x) == l1, dataset) "Dataset contains time series with different number of dimensions"
+
+    # All time series have 0 dimensions?
+    isempty(dataset[begin]) && return zeros(T, 0, length(dataset))
+
+    return if interpolate
+        @assert false "Interpolating series of different lengths or with NaNs is not implemented yet"
+    else
+        l2 = length(dataset[begin][begin])
+        @assert all(x -> all(y -> length(y) == l2, x), dataset) "Dataset contains a dimension with series of unequal lengths, consider interpolate=true"
+        reduce(hcat, [ts[1] for ts in dataset])
+    end
 end
 
 end

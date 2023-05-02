@@ -59,7 +59,7 @@ macro metadata_parse_int(name::AbstractString, line::Symbol, out::Symbol, starte
     )
 end
 
-function parse(::Type{T}, replace_nan::T, missing_symbol::AbstractString, line::AbstractString, line_number::Int64, dimension::Int64, series_length::Int64, has_timestamps::Bool, has_missing::Bool, is_equallength::Bool, is_classification::Bool, class_labels::Set{String})::Tuple{Vector{Vector{T}}, String} where {T}
+function parse(::Type{T}, replace_missing_by::T, missing_symbol::AbstractString, line::AbstractString, line_number::Int64, dimension::Int64, series_length::Int64, has_timestamps::Bool, has_missing::Bool, is_equallength::Bool, is_classification::Bool, class_labels::Set{String})::Tuple{Vector{Vector{T}}, String} where {T}
     @read_assert dimension == 1 "Multivariate datasets are not supported yed"
     @read_assert !has_timestamps "Datasets with timetamps are not supported yed"
     @read_assert is_classification "Datasets for regression are not supported yed"
@@ -69,7 +69,7 @@ function parse(::Type{T}, replace_nan::T, missing_symbol::AbstractString, line::
 
     @inline str_to_num(s::AbstractString)::T = begin
         if s === missing_symbol
-            return replace_nan
+            return replace_missing_by
         end
 
         tmp = tryparse(T, s)
@@ -82,7 +82,7 @@ function parse(::Type{T}, replace_nan::T, missing_symbol::AbstractString, line::
     ], spl[2]
 end
 
-function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_nan::T = NaN64, missing_symbol::AbstractString="?")::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where T
+function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_missing_by::T = NaN64, missing_symbol::AbstractString="?")::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where T
     # Parsing info
     started_metadata::Bool = false
 
@@ -114,7 +114,6 @@ function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_nan::T 
     outY::Vector{String} = []
 
     for (line_number, line) in enumerate(eachline(path))
-        println(line_number)
         line = lowercase(strip(line))
 
         # Skip blank lines
@@ -123,7 +122,7 @@ function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_nan::T 
         end
 
         if tag_data
-            x, y = parse(T, replace_nan, missing_symbol, line, line_number, dimension, series_length, has_timestamps, has_missing, is_equallength, has_classlabel, class_labels)
+            x, y = parse(T, replace_missing_by, missing_symbol, line, line_number, dimension, series_length, has_timestamps, has_missing, is_equallength, has_classlabel, class_labels)
             push!(outX, x)
             push!(outY, y)
         elseif startswith(line, '#')
