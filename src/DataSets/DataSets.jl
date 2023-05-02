@@ -4,9 +4,18 @@ include("utils.jl")
 include("reader.jl")
 include("loader.jl")
 
-include("Loaders/UCRArchive.jl")
-
 export read_ts_file
 using ._Reader: read_ts_file
+
+export load_dataset
+using ._Loader: load_dataset
+
+# List of available data set loaders
+module _Loaders
+include("Loaders/UCRArchive.jl")
+end
+
+export UCRArchive
+using ._Loaders: UCRArchive
 
 end

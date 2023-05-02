@@ -5,10 +5,19 @@ import ScientificTypesBase
 
 include("MiniRocket/MiniRocket.jl")
 include("KNNDTW/KNNDTW.jl")
+include("DataSets/DataSets.jl")
 
 export MiniRocketModel
 using .MiniRocket: MiniRocketModel
 
+export dtw, DTW, DTWSakoeChiba, DTWItakura, KNNDTWModel
+using .KNNDTW: dtw, DTW, DTWSakoeChiba, DTWItakura, KNNDTWModel
+
+export MiniRocketModel
+using .MiniRocket: MiniRocketModel
+
+export DataSets
+import .DataSets
 
 
 MLJModelInterface.metadata_pkg.(

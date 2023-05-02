@@ -1,6 +1,6 @@
 module _Utils
 
-using ProgressMeter: Progress
+using ProgressMeter: Progress, next!
 
 import ZipFile
 
