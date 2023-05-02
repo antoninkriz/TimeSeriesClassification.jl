@@ -9,26 +9,26 @@ abstract type DTWType end
 
 mutable struct DTW <: DTWType
     distance::Function
-    matrix::Union{Nothing, Matrix}
+    matrix::Some{Matrix}
 end
 
-DTW(;distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing) where {T <: AbstractFloat} = DTW(distance, matrix)
+DTW(;distance::Function = euclidean_distance, matrix::Some{Matrix{T}} = nothing) where {T <: AbstractFloat} = DTW(distance, matrix)
 
 mutable struct DTWSakoeChiba <: DTWType
     distance::Function
-    matrix::Union{Nothing, Matrix}
+    matrix::Some{Matrix}
     radius::Unsigned
 end
 
-DTWSakoeChiba(;distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing, radius::Unsigned = 0) where {T <: AbstractFloat} = DTWSakoeChiba(distance, matrix, radius)
+DTWSakoeChiba(;distance::Function = euclidean_distance, matrix::Some{Matrix{T}} = nothing, radius::Unsigned = 0) where {T <: AbstractFloat} = DTWSakoeChiba(distance, matrix, radius)
 
 mutable struct DTWItakura <: DTWType
     distance::Function
-    matrix::Union{Nothing, Matrix}
+    matrix::Some{Matrix}
     slope::Float64
 end
 
-function DTWItakura(;distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing, slope::Float64 = 1.0) where {T <: AbstractFloat}
+function DTWItakura(;distance::Function = euclidean_distance, matrix::Some{Matrix{T}} = nothing, slope::Float64 = 1.0) where {T <: AbstractFloat}
     @assert slope >= 1.0
 
     DTWItakura(distance, matrix, slope)
