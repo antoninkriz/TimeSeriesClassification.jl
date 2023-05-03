@@ -7,7 +7,6 @@ import ZipFile
 export unzip
 
 
-
 # Based on https://discourse.julialang.org/t/how-to-extract-a-file-in-a-zip-archive-without-using-os-specific-tools/34585/5
 function unzip(file::AbstractString, output_directory::AbstractString="")
     file_full_path = isabspath(file) ? file : joinpath(pwd(), file)
@@ -25,7 +24,7 @@ function unzip(file::AbstractString, output_directory::AbstractString="")
 
 
     archive = ZipFile.Reader(file_full_path)
-    p = Progress(length(archive.files), "Extracting:")
+    p = Progress(length(archive.files), "Extracting - $(length(archive.files)) items:")
 
     Threads.@threads for f in archive.files
         fullFilePath = joinpath(output_directory, f.name)

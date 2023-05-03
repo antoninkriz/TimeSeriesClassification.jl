@@ -3,6 +3,7 @@ module _MiniRocket
 using Random: AbstractRNG, GLOBAL_RNG, rand
 using StaticArrays: SMatrix
 using Statistics: quantile, quantile!
+using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
 import MLJModelInterface
 import ScientificTypesBase
@@ -24,14 +25,13 @@ const INDICES::SMatrix{3,NUM_KERNELS,Int64} = [
 function fit_biases(X::AbstractMatrix{T}, dilations::Vector{Int64}, num_features_per_dilation::Vector{Int64}, quantiles::Vector{T}; shuffled::Bool=false, rng::AbstractRNG)::AbstractVector{T} where {T <: AbstractFloat}
     input_length, num_examples = size(X)
 
-    num_features = NUM_KERNELS * sum(num_features_per_dilation)
+    num_features = NUM_KERNELS * vsum(num_features_per_dilation)
     biases = zeros(T, num_features)
 
     feature_index_start = 0
 
-    # TODO: Make this work for unshuffled datasets
-    # This will work ONLY with the assumption that the dataset is already shuffled!
-    # Also, this index starts from zero because it's used within modulo operation.
+    # This will correctly work ONLY with the assumption that the dataset is already shuffled! (shuffled=true)
+    # This index starts from zero because it's used within modulo operation.
     idx_nonrand = 0
 
     _quantiles = zeros(T, maximum(num_features_per_dilation))
@@ -101,7 +101,7 @@ function fit_dilations(input_length::Int64, num_features::Unsigned, max_dilation
 
     num_features_per_dilation = floor.(Int64, (num_features_per_dilation * multiplier))
 
-    remainder = num_features_per_kernel - sum(num_features_per_dilation)
+    remainder = num_features_per_kernel - vsum(num_features_per_dilation)
     i = 1
     while remainder > 0
         num_features_per_dilation[i] += 1
@@ -118,7 +118,7 @@ function fit(X::AbstractMatrix{T}; num_features::Unsigned=Unsigned(10_000), max_
 
     dilations, num_features_per_dilation = fit_dilations(input_length, num_features, max_dilations_per_kernel)
 
-    num_features_per_kernel = sum(num_features_per_dilation)
+    num_features_per_kernel = vsum(num_features_per_dilation)
 
     quantiles = [(x * ((sqrt(T(5)) + 1) / 2)) % 1 for x in 1:(NUM_KERNELS * num_features_per_kernel)]
 
@@ -131,7 +131,7 @@ end
 function transform(X::AbstractMatrix{T}; dilations::Vector{Int64}, num_features_per_dilation::Vector{Int64}, biases::Vector{T})::Matrix{T} where {T <: AbstractFloat}
     input_length, num_examples = size(X)
 
-    features = zeros(T, (NUM_KERNELS * sum(num_features_per_dilation), num_examples))
+    features = zeros(T, (NUM_KERNELS * vsum(num_features_per_dilation), num_examples))
 
     # Small allocations might be faster than this thing. This needs testing.
     C_alpha_theads = zeros(T, input_length, Threads.nthreads())
@@ -196,11 +196,11 @@ function transform(X::AbstractMatrix{T}; dilations::Vector{Int64}, num_features_
                 _padding1 = (_padding0 + (kernel_index - 1)) % 2
                 if _padding1 == 0
                     for feature_count in 1:num_features_this_dilation
-                        features[feature_index_start + feature_count, example_index] = sum(C .> biases[feature_index_start + feature_count]) / length(C)
+                        features[feature_index_start + feature_count, example_index] = @turbo sum(C .> biases[feature_index_start + feature_count]) / length(C)
                     end
                 else
                     for feature_count in 1:num_features_this_dilation
-                        features[feature_index_start + feature_count, example_index] = sum(@views C[padding + 1:end - padding] .> biases[feature_index_start + feature_count]) / ((length(C) - padding) - (padding + 1) + 1)
+                        features[feature_index_start + feature_count, example_index] = @turbo @views sum(C[padding + 1:end - padding] .> biases[feature_index_start + feature_count]) / ((length(C) - padding) - (padding + 1) + 1)
                     end
                 end
 

@@ -6,7 +6,7 @@ import ..._Loader
 
 using Logging: @debug
 using Downloads: download
-using ProgressMeter: AbstractProgress, ProgressUnknown, Progress, update!
+using ProgressMeter: ProgressUnknown, Progress, update!, cancel, finish!
 
 export UCRArchive
 
@@ -78,22 +78,40 @@ function _Loader.load_dataset(::Type{UCRArchive}, name::Symbol, dataset_path::Un
     end
     tmp_file = joinpath(tmp_full_path, FILE)
 
-    p::AbstractProgress = ProgressUnknown("Downloading (kB):")
-    prog(total::Integer, now::Integer) = begin
-        if total != 0 && typeof(p) == ProgressUnknown
-            p = Progress(total ÷ 1000, "Downloading (kB):")
-        end
+    lk = ReentrantLock()
+    p::Union{Nothing, Progress} = nothing
+    prog(total::Int, now::Int) = begin
+        lock(lk) do
+            tKB = total ÷ 1000
 
-        update!(p, now ÷ 1000)
+            # ProgressUnknown can not be canceled due to a bug (https://github.com/timholy/ProgressMeter.jl/pull/217), so this needs to be hacked around
+            if p === nothing
+                if total == 0
+                    p = Progress(typemax(Int), "Downloading - unknown file size")
+                else
+                    p = Progress(tKB, "Downloading - $(total / 1000) kB")
+                end
+            end
+
+            if (p.n == typemax(Int) && total != 0) || (p.n != typemax(Int) && p.n != tKB)
+                cancel(p, "", keep=false)
+                p = Progress(tKB, "Downloading - $(total / 1000) kB")
+            end
+
+            if p.counter != p.n
+                update!(p, min(now ÷ 1000, tKB))
+            end
+        end
     end
 
     @debug "Downloading dataset"
     download(URL, tmp_file, progress=prog)
+    finish!(p)
 
     @debug "Unzipping dataset"
     unzip(tmp_file, dataset_full_path)
 
-    @debug "Moving dataset to correct path"
+    @debug "Moving dataset to the correct path"
     for dataset_name in readdir(joinpath(dataset_full_path, ZIP_FOLDER))
         mv(joinpath(dataset_full_path, ZIP_FOLDER, dataset_name), joinpath(dataset_full_path, dataset_name))
     end

@@ -2,6 +2,8 @@ module _KNN
 
 import MLJModelInterface
 using CategoricalArrays: AbstractCategoricalArray
+using VectorizedStatistics: vsum
+using LoopVectorization: @turbo
 using .._DTW: DTWType, DTW, dtw
 using .._Utils: FastMaxHeap
 
@@ -46,7 +48,7 @@ function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T
 
     for q in 1:size(Xnew, 2)
         for i in axes(X, 2)
-            dtw_distance = @views dtw(model.distance, Xnew[:, q], @views X[:, i])
+            dtw_distance = @views dtw(model.distance, Xnew[:, q], X[:, i])
 
             if isempty(heap) || dtw_distance < max(heap)[1]
                 push!(heap, (dtw_distance, (y[i], w === nothing ? nothing : w[i])))
@@ -56,16 +58,16 @@ function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T
         if model.weights == :uniform
             for (_, (label, weight)) in @views heap.data[begin:length(heap)]
                 ww = (w === nothing ? 1 : weight)
-                probas[classes .== label, q] .= one(T) / model.K * ww
+                probas[findfirst(==(label), classes), q] = one(T) / model.K * ww
             end
         elseif model.weights == :distance
             for (dist, (label, weight)) in @views heap.data[begin:length(heap)]
                 ww = (w === nothing ? 1 : weight)
-                probas[classes .== label, q] .= one(T) / (dist + sqrt(nextfloat(zero(Float64)))) * ww
+                probas[findfirst(==(label), classes), q] = one(T) / (dist + sqrt(nextfloat(zero(Float64)))) * ww
             end
         end
 
-        probas[:, q] ./= sum(@views probas[:, q])
+        @turbo probas[:, q] ./= vsum(@views probas[:, q])
         empty!(heap)
     end
 

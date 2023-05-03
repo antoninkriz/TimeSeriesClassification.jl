@@ -23,9 +23,8 @@ function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}}; interpola
     # Is the whole dataset empty?
     isempty(dataset) && return T[;;]
 
-    l1 = length(dataset[begin])
     @assert length(dataset[begin]) == 1 "Dataset has more than one dimension"
-    @assert all(x -> length(x) == l1, dataset) "Dataset contains time series with different number of dimensions"
+    @assert all(x -> length(x) == length(dataset[begin]), dataset) "Dataset contains time series with different number of dimensions"
 
     # All time series have 0 dimensions?
     isempty(dataset[begin]) && return zeros(T, 0, length(dataset))
@@ -33,8 +32,7 @@ function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}}; interpola
     return if interpolate
         @assert false "Interpolating series of different lengths or with NaNs is not implemented yet"
     else
-        l2 = length(dataset[begin][begin])
-        @assert all(x -> all(y -> length(y) == l2, x), dataset) "Dataset contains a dimension with series of unequal lengths, consider interpolate=true"
+        @assert all(x -> all(y -> length(y) == length(dataset[begin][begin]), x), dataset) "Dataset contains a dimension with series of unequal lengths, consider interpolate=true"
         reduce(hcat, [ts[1] for ts in dataset])
     end
 end
