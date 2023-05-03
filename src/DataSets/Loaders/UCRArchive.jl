@@ -10,7 +10,6 @@ using ProgressMeter: ProgressUnknown, Progress, update!, cancel, finish!
 
 export UCRArchive
 
-
 const URL = "https://www.timeseriesclassification.com/Downloads/Archives/Univariate2018_ts.zip"
 const FILE = "Univariate2018_ts.zip"
 const ZIP_FOLDER = "Univariate_ts"
@@ -19,36 +18,143 @@ abstract type UCRArchive <: AbstractLoader end
 
 function _Loader.list_available_datasets(::Type{UCRArchive})::Vector{Symbol}
     [
-        :ACSF1, :Adiac, :AllGestureWiimoteX, :AllGestureWiimoteY, :AllGestureWiimoteZ,
-        :ArrowHead, :Beef, :BeetleFly, :BirdChicken, :BME,
-        :Car, :CBF, :Chinatown, :ChlorineConcentration, :CinCECGTorso,
-        :Coffee, :Computers, :CricketX, :CricketY, :CricketZ,
-        :Crop, :DiatomSizeReduction, :DistalPhalanxOutlineAgeGroup, :DistalPhalanxOutlineCorrect, :DistalPhalanxTW,
-        :DodgerLoopDay, :DodgerLoopGame, :DodgerLoopWeekend, :Earthquakes, :ECG200,
-        :ECG5000, :ECGFiveDays, :ElectricDevices, :EOGHorizontalSignal, :EOGVerticalSignal,
-        :EthanolLevel, :FaceAll, :FaceFour, :FacesUCR, :FiftyWords,
-        :Fish, :FordA, :FordB, :FreezerRegularTrain, :FreezerSmallTrain,
-        :Fungi, :GestureMidAirD1, :GestureMidAirD2, :GestureMidAirD3, :GesturePebbleZ1,
-        :GesturePebbleZ2, :GunPoint, :GunPointAgeSpan, :GunPointMaleVersusFemale, :GunPointOldVersusYoung,
-        :Ham, :HandOutlines, :Haptics, :Herring, :HouseTwenty,
-        :InlineSkate, :InsectEPGRegularTrain, :InsectEPGSmallTrain, :InsectWingbeatSound, :ItalyPowerDemand,
-        :LargeKitchenAppliances, :Lightning2, :Lightning7, :Mallat, :Meat,
-        :MedicalImages, :MelbournePedestrian, :MiddlePhalanxOutlineAgeGroup, :MiddlePhalanxOutlineCorrect, :MiddlePhalanxTW,
-        :MixedShapesRegularTrain, :MixedShapesSmallTrain, :MoteStrain, :NonInvasiveFetalECGThorax1, :NonInvasiveFetalECGThorax2,
-        :OliveOil, :OSULeaf, :PhalangesOutlinesCorrect, :Phoneme, :PickupGestureWiimoteZ,
-        :PigAirwayPressure, :PigArtPressure, :PigCVP, :PLAID, :Plane,
-        :PowerCons, :ProximalPhalanxOutlineAgeGroup, :ProximalPhalanxOutlineCorrect, :ProximalPhalanxTW, :RefrigerationDevices,
-        :Rock, :ScreenType, :SemgHandGenderCh2, :SemgHandMovementCh2, :SemgHandSubjectCh2,
-        :ShakeGestureWiimoteZ, :ShapeletSim, :ShapesAll, :SmallKitchenAppliances, :SmoothSubspace,
-        :SonyAIBORobotSurface1, :SonyAIBORobotSurface2, :StarLightCurves, :Strawberry, :SwedishLeaf,
-        :Symbols, :SyntheticControl, :ToeSegmentation1, :ToeSegmentation2, :Trace,
-        :TwoLeadECG, :TwoPatterns, :UMD, :UWaveGestureLibraryAll, :UWaveGestureLibraryX,
-        :UWaveGestureLibraryY, :UWaveGestureLibraryZ, :Wafer, :Wine, :WordSynonyms,
-        :Worms, :WormsTwoClass, :Yoga
+        :ACSF1,
+        :Adiac,
+        :AllGestureWiimoteX,
+        :AllGestureWiimoteY,
+        :AllGestureWiimoteZ,
+        :ArrowHead,
+        :Beef,
+        :BeetleFly,
+        :BirdChicken,
+        :BME,
+        :Car,
+        :CBF,
+        :Chinatown,
+        :ChlorineConcentration,
+        :CinCECGTorso,
+        :Coffee,
+        :Computers,
+        :CricketX,
+        :CricketY,
+        :CricketZ,
+        :Crop,
+        :DiatomSizeReduction,
+        :DistalPhalanxOutlineAgeGroup,
+        :DistalPhalanxOutlineCorrect,
+        :DistalPhalanxTW,
+        :DodgerLoopDay,
+        :DodgerLoopGame,
+        :DodgerLoopWeekend,
+        :Earthquakes,
+        :ECG200,
+        :ECG5000,
+        :ECGFiveDays,
+        :ElectricDevices,
+        :EOGHorizontalSignal,
+        :EOGVerticalSignal,
+        :EthanolLevel,
+        :FaceAll,
+        :FaceFour,
+        :FacesUCR,
+        :FiftyWords,
+        :Fish,
+        :FordA,
+        :FordB,
+        :FreezerRegularTrain,
+        :FreezerSmallTrain,
+        :Fungi,
+        :GestureMidAirD1,
+        :GestureMidAirD2,
+        :GestureMidAirD3,
+        :GesturePebbleZ1,
+        :GesturePebbleZ2,
+        :GunPoint,
+        :GunPointAgeSpan,
+        :GunPointMaleVersusFemale,
+        :GunPointOldVersusYoung,
+        :Ham,
+        :HandOutlines,
+        :Haptics,
+        :Herring,
+        :HouseTwenty,
+        :InlineSkate,
+        :InsectEPGRegularTrain,
+        :InsectEPGSmallTrain,
+        :InsectWingbeatSound,
+        :ItalyPowerDemand,
+        :LargeKitchenAppliances,
+        :Lightning2,
+        :Lightning7,
+        :Mallat,
+        :Meat,
+        :MedicalImages,
+        :MelbournePedestrian,
+        :MiddlePhalanxOutlineAgeGroup,
+        :MiddlePhalanxOutlineCorrect,
+        :MiddlePhalanxTW,
+        :MixedShapesRegularTrain,
+        :MixedShapesSmallTrain,
+        :MoteStrain,
+        :NonInvasiveFetalECGThorax1,
+        :NonInvasiveFetalECGThorax2,
+        :OliveOil,
+        :OSULeaf,
+        :PhalangesOutlinesCorrect,
+        :Phoneme,
+        :PickupGestureWiimoteZ,
+        :PigAirwayPressure,
+        :PigArtPressure,
+        :PigCVP,
+        :PLAID,
+        :Plane,
+        :PowerCons,
+        :ProximalPhalanxOutlineAgeGroup,
+        :ProximalPhalanxOutlineCorrect,
+        :ProximalPhalanxTW,
+        :RefrigerationDevices,
+        :Rock,
+        :ScreenType,
+        :SemgHandGenderCh2,
+        :SemgHandMovementCh2,
+        :SemgHandSubjectCh2,
+        :ShakeGestureWiimoteZ,
+        :ShapeletSim,
+        :ShapesAll,
+        :SmallKitchenAppliances,
+        :SmoothSubspace,
+        :SonyAIBORobotSurface1,
+        :SonyAIBORobotSurface2,
+        :StarLightCurves,
+        :Strawberry,
+        :SwedishLeaf,
+        :Symbols,
+        :SyntheticControl,
+        :ToeSegmentation1,
+        :ToeSegmentation2,
+        :Trace,
+        :TwoLeadECG,
+        :TwoPatterns,
+        :UMD,
+        :UWaveGestureLibraryAll,
+        :UWaveGestureLibraryX,
+        :UWaveGestureLibraryY,
+        :UWaveGestureLibraryZ,
+        :Wafer,
+        :Wine,
+        :WordSynonyms,
+        :Worms,
+        :WormsTwoClass,
+        :Yoga,
     ]
 end
 
-function _Loader.load_dataset(::Type{UCRArchive}, name::Symbol, dataset_path::Union{Nothing,AbstractString}=nothing, tmp_path::Union{Nothing,AbstractString}=nothing)
+function _Loader.load_dataset(
+    ::Type{UCRArchive},
+    name::Symbol,
+    dataset_path::Union{Nothing, AbstractString} = nothing,
+    tmp_path::Union{Nothing, AbstractString} = nothing,
+)
     if dataset_path === nothing
         dataset_path = joinpath(homedir(), DEFAULT_DIR, "UCRArchive")
     end
@@ -94,7 +200,7 @@ function _Loader.load_dataset(::Type{UCRArchive}, name::Symbol, dataset_path::Un
             end
 
             if (p.n == typemax(Int) && total != 0) || (p.n != typemax(Int) && p.n != tKB)
-                cancel(p, "", keep=false)
+                cancel(p, "", keep = false)
                 p = Progress(tKB, "Downloading - $(total / 1000) kB")
             end
 
@@ -105,7 +211,7 @@ function _Loader.load_dataset(::Type{UCRArchive}, name::Symbol, dataset_path::Un
     end
 
     @debug "Downloading dataset"
-    download(URL, tmp_file, progress=prog)
+    download(URL, tmp_file, progress = prog)
     finish!(p)
 
     @debug "Unzipping dataset"

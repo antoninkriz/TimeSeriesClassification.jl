@@ -4,62 +4,81 @@ using Base: IOError
 
 export read_ts_file
 
-
 macro read_assert(ex::Union{Symbol, Expr, Bool}, msg::Union{Expr, AbstractString})
     return :($(esc(ex)) ? $(nothing) : throw(AssertionError(string("TS file - ", $msg))))
 end
 
-
-macro metadata_parse_bool(name::AbstractString, line::Symbol, out::Symbol, started_metadata::Symbol, started_data::Symbol)
-    return esc(
-        quote
-            begin
-                bool = startswith($line, $name)
-                if bool
-                    @read_assert !$started_data "Metadata must come before data"
-
-                    s = split($line, ' ', limit=2)
-                    @read_assert length(s) == 2 "$($name) requires an associated value"
-                    if s[2] == "true"
-                        $out = true
-                    elseif s[2] == "false"
-                        $out = false
-                    else
-                        @read_assert false "Invalid $($name) boolean value"
-                    end
-
-                    $started_metadata = true
-                end
-                bool
-            end
-        end
-    )
-end
-
-macro metadata_parse_int(name::AbstractString, line::Symbol, out::Symbol, started_metadata::Symbol, started_data::Symbol)
-    return esc(
-        quote
+macro metadata_parse_bool(
+    name::AbstractString,
+    line::Symbol,
+    out::Symbol,
+    started_metadata::Symbol,
+    started_data::Symbol,
+)
+    return esc(quote
+        begin
             bool = startswith($line, $name)
             if bool
                 @read_assert !$started_data "Metadata must come before data"
 
-                s = split($line, ' ', limit=2)
+                s = split($line, ' ', limit = 2)
                 @read_assert length(s) == 2 "$($name) requires an associated value"
-                n = tryparse(Int64, s[2])
-                if n !== nothing
-                    $out = n
+                if s[2] == "true"
+                    $out = true
+                elseif s[2] == "false"
+                    $out = false
                 else
-                    @read_assert false "Invalid $($name) integer value"
+                    @read_assert false "Invalid $($name) boolean value"
                 end
 
                 $started_metadata = true
             end
             bool
         end
-    )
+    end)
 end
 
-function parse(::Type{T}, replace_missing_by::T, missing_symbol::AbstractString, line::AbstractString, line_number::Int64, dimension::Int64, series_length::Int64, has_timestamps::Bool, has_missing::Bool, is_equallength::Bool, is_classification::Bool, class_labels::Set{String})::Tuple{Vector{Vector{T}}, String} where {T}
+macro metadata_parse_int(
+    name::AbstractString,
+    line::Symbol,
+    out::Symbol,
+    started_metadata::Symbol,
+    started_data::Symbol,
+)
+    return esc(quote
+        bool = startswith($line, $name)
+        if bool
+            @read_assert !$started_data "Metadata must come before data"
+
+            s = split($line, ' ', limit = 2)
+            @read_assert length(s) == 2 "$($name) requires an associated value"
+            n = tryparse(Int64, s[2])
+            if n !== nothing
+                $out = n
+            else
+                @read_assert false "Invalid $($name) integer value"
+            end
+
+            $started_metadata = true
+        end
+        bool
+    end)
+end
+
+function parse(
+    ::Type{T},
+    replace_missing_by::T,
+    missing_symbol::AbstractString,
+    line::AbstractString,
+    line_number::Int64,
+    dimension::Int64,
+    series_length::Int64,
+    has_timestamps::Bool,
+    has_missing::Bool,
+    is_equallength::Bool,
+    is_classification::Bool,
+    class_labels::Set{String},
+)::Tuple{Vector{Vector{T}}, String} where {T}
     @read_assert dimension == 1 "Multivariate datasets are not supported yed"
     @read_assert !has_timestamps "Datasets with timetamps are not supported yed"
     @read_assert is_classification "Datasets for regression are not supported yed"
@@ -77,12 +96,15 @@ function parse(::Type{T}, replace_missing_by::T, missing_symbol::AbstractString,
         return tmp
     end
 
-    [
-        str_to_num.(split(spl[1], ','))
-    ], spl[2]
+    [str_to_num.(split(spl[1], ','))], spl[2]
 end
 
-function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_missing_by::T = NaN64, missing_symbol::AbstractString="?")::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where T
+function read_ts_file(
+    path::AbstractString,
+    ::Type{T} = Float64,
+    replace_missing_by::T = NaN64,
+    missing_symbol::AbstractString = "?",
+)::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
     # Parsing info
     started_metadata::Bool = false
 
@@ -122,7 +144,20 @@ function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_missing
         end
 
         if tag_data
-            x, y = parse(T, replace_missing_by, missing_symbol, line, line_number, dimension, series_length, has_timestamps, has_missing, is_equallength, has_classlabel, class_labels)
+            x, y = parse(
+                T,
+                replace_missing_by,
+                missing_symbol,
+                line,
+                line_number,
+                dimension,
+                series_length,
+                has_timestamps,
+                has_missing,
+                is_equallength,
+                has_classlabel,
+                class_labels,
+            )
             push!(outX, x)
             push!(outY, y)
         elseif startswith(line, '#')
@@ -155,7 +190,7 @@ function read_ts_file(path::AbstractString, ::Type{T} = Float64, replace_missing
         elseif startswith(line, "@classlabel")
             @read_assert !tag_data "Metadata must come before data"
 
-            s = split(line, ' ', limit=3)
+            s = split(line, ' ', limit = 3)
             @read_assert length(s) >= 2 "@classlabel requires an associated value(s)"
             @read_assert s[2] in ("true", "false") "Invalid @classlabel boolean value"
 

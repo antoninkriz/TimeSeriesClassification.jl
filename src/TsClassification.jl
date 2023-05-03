@@ -19,7 +19,6 @@ using .MiniRocket: MiniRocketModel
 export DataSets
 import .DataSets
 
-
 MLJModelInterface.metadata_pkg.(
     (MiniRocketModel),
     name = "TsClassification",

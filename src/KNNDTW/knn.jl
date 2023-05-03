@@ -18,19 +18,19 @@ end
 function MLJModelInterface.reformat(::KNNDTWModel, (X, type))
     @assert type in (:row_based, :column_based)
 
-    (MLJModelInterface.matrix(X, transpose=type == :row_based),)
+    (MLJModelInterface.matrix(X, transpose = type == :row_based),)
 end
 
 function MLJModelInterface.reformat(::KNNDTWModel, (X, type), y)
     @assert type in (:row_based, :column_based)
 
-    (MLJModelInterface.matrix(X, transpose=type == :row_based), MLJModelInterface.categorical(y))
+    (MLJModelInterface.matrix(X, transpose = type == :row_based), MLJModelInterface.categorical(y))
 end
 
 function MLJModelInterface.reformat(::KNNDTWModel, (X, type), y, w)
     @assert type in (:row_based, :column_based)
 
-    (MLJModelInterface.matrix(X, transpose=type == :row_based), MLJModelInterface.categorical(y), w)
+    (MLJModelInterface.matrix(X, transpose = type == :row_based), MLJModelInterface.categorical(y), w)
 end
 
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xmatrix) = (view(Xmatrix, :, I),)

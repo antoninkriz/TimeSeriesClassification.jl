@@ -4,13 +4,13 @@ using LoopVectorization: @turbo
 
 export sorted_unique_counts, logspace
 
-function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T},Vector{Int64}} where {T}
+function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T}, Vector{Int64}} where {T}
     if isempty(arr)
         return [], []
     end
 
     uniq_count = 1
-    @inbounds @turbo for i = 2:length(arr)
+    @inbounds @turbo for i in 2:length(arr)
         uniq_count += arr[i] != arr[i-1]
     end
 
@@ -34,7 +34,6 @@ function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T},Vector{Int64}} wh
     return unq, cnt
 end
 
-
-@inline logspace(start, stop, n; base=10) = @turbo @fastmath base .^ range(start, stop, n)
+@inline logspace(start, stop, n; base = 10) = @turbo @fastmath base .^ range(start, stop, n)
 
 end

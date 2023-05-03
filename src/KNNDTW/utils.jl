@@ -4,11 +4,9 @@ import Base.isempty, Base.empty!, Base.max, Base.length, Base.push!
 
 export euclidean_distance, FastMaxHeap
 
-
 function euclidean_distance(a, b)
     return (a - b)^2
 end
-
 
 mutable struct FastMaxHeap{T, Tpayload}
     data::Vector{Tuple{T, Tpayload}}
@@ -30,7 +28,7 @@ Base.max(heap::FastMaxHeap) = heap.data[1]
 
 Base.length(heap::FastMaxHeap) = heap.n
 
-@inline parent(i) =  (i - 1) ÷ 2 + 1
+@inline parent(i) = (i - 1) ÷ 2 + 1
 @inline left(i) = (2 * i + 1) + 1
 @inline right(i) = (2 * i + 2) + 1
 
@@ -48,7 +46,7 @@ Base.length(heap::FastMaxHeap) = heap.n
             if l < heap.n && heap.data[l][1] > heap.data[i][1]
                 largest = l
             end
-            
+
             if r < heap.n && heap.data[r][1] > heap.data[largest][1]
                 largest = r
             end
