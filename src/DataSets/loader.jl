@@ -1,5 +1,7 @@
 module _Loader
 
+using LoopVectorization: @turbo
+
 using .._Reader: read_ts_file
 
 export load_dataset, dataset_flatten_to_matrix, DEFAULT_DIR, AbstractLoader
@@ -21,7 +23,7 @@ function load_dataset(
     read_ts_file(path, T, replace_missing_by, missing_symbol)
 end
 
-function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}}; interpolate::Bool = false)::Matrix{T} where {T}
+function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}})::Matrix{T} where {T}
     # Is the whole dataset empty?
     isempty(dataset) && return T[;;]
 
@@ -31,12 +33,32 @@ function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}}; interpola
     # All time series have 0 dimensions?
     isempty(dataset[begin]) && return zeros(T, 0, length(dataset))
 
-    return if interpolate
-        @assert false "Interpolating series of different lengths or with NaNs is not implemented yet"
-    else
-        @assert all(x -> all(y -> length(y) == length(dataset[begin][begin]), x), dataset) "Dataset contains a dimension with series of unequal lengths, consider interpolate=true"
-        reduce(hcat, [ts[1] for ts in dataset])
+    @assert all(x -> all(y -> length(y) == length(dataset[begin][begin]), x), dataset) "Dataset contains a dimension with series of unequal lengths, consider interpolate=true"
+    reduce(hcat, [ts[1] for ts in dataset])
+end
+
+function ts_linear_interpolate_missing!(arr::Vector{T}, is_missing::Function = isnan) where {T <: Number}
+    s = findfirst(x -> !is_missing(x), arr)
+    t = arr[s]
+    @inbounds arr[1:s - 1] .= t
+
+    c = 0
+    @inbounds for i in s+1:length(arr)
+        if !is_missing(arr[i])
+            n = (arr[i]-t) / (c+1)
+            for j in 1:c
+                arr[s+j] = t + n * j
+            end
+            s = i
+            t = arr[s]
+            c = 0
+        else
+            c += 1
+        end
     end
+
+    @inbounds arr[s+1:end] .= t
+    arr
 end
 
 end

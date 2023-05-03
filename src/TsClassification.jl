@@ -13,9 +13,6 @@ using .MiniRocket: MiniRocketModel
 export dtw, DTW, DTWSakoeChiba, DTWItakura, KNNDTWModel
 using .KNNDTW: dtw, DTW, DTWSakoeChiba, DTWItakura, KNNDTWModel
 
-export MiniRocketModel
-using .MiniRocket: MiniRocketModel
-
 export DataSets
 import .DataSets
 
