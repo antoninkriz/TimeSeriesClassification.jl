@@ -1,7 +1,7 @@
 module _KNN
 
 import MLJModelInterface
-using CategoricalArrays: AbstractCategoricalArray
+using CategoricalArrays: AbstractCategoricalArray, CatArrOrSub
 using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
 using .._DTW: DTWType, DTW, dtw
@@ -37,7 +37,7 @@ MLJModelInterface.selectrows(::KNNDTWModel, I, Xmatrix) = (view(Xmatrix, :, I),)
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xmatrix, y) = (view(Xmatrix, :, I), view(y, I))
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xmatrix, y, w) = (view(Xmatrix, :, I), view(y, I), view(w, I))
 
-function MLJModelInterface.fit(::KNNDTWModel, ::Any, X::AbstractMatrix{T}, y, w = nothing) where {T <: AbstractFloat}
+function MLJModelInterface.fit(::KNNDTWModel, ::Any, X::AbstractMatrix{T}, y::Union{AbstractCategoricalArray, SubArray{<:Any, <:Any, <:AbstractCategoricalArray}}, w = nothing) where {T <: AbstractFloat}
     return ((X, y, w), nothing, nothing)
 end
 
