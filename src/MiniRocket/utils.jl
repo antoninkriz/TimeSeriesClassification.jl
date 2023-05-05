@@ -6,7 +6,7 @@ export sorted_unique_counts, logspace
 
 function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T}, Vector{Int64}} where {T}
     if isempty(arr)
-        return [], []
+        return T[], Int64[]
     end
 
     uniq_count = 1
@@ -34,6 +34,6 @@ function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T}, Vector{Int64}} w
     return unq, cnt
 end
 
-@inline logspace(start, stop, n; base = 10) = @turbo @fastmath base .^ range(start, stop, n)
+@inline logspace(start::Real, stop::Real, n::Real; base::Real = 10) = @turbo @fastmath base .^ range(start, stop, n)
 
 end

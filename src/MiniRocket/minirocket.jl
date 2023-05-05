@@ -35,11 +35,6 @@ function fit_biases(
 
     feature_index_start = 0
 
-    # This will correctly work ONLY with the assumption that the dataset is already shuffled! (shuffled=true)
-    # This index starts from zero because it's used within modulo operation.
-    idx_nonrand = 0
-
-    _quantiles = zeros(T, maximum(num_features_per_dilation))
     C = zeros(T, input_length)
     A = zeros(T, input_length)
     G = zeros(T, input_length)
@@ -52,41 +47,40 @@ function fit_biases(
         for kernel_index in 1:NUM_KERNELS
             feature_index_end = feature_index_start + num_features_this_dilation
 
-            _X = @views X[:, shuffled ? ((idx_nonrand % num_examples) + 1) : (abs(rand(rng, Int64) % num_examples) + 1)]
-            idx_nonrand += 1
+            _X = @views X[:, shuffled ? (((kernel_index + ((dilation_index - 1) * NUM_KERNELS) - 1) % num_examples) + 1) : (abs(rand(rng, Int64) % num_examples) + 1)]
 
             @turbo @. A = _X * -1
             @turbo @. G = _X * 3
 
-            copy!(C, A)
+            copyto!(C, A)
 
             s = dilation + 1
             e = input_length - padding
 
             for idx in 1:(9÷2)
                 d = e + dilation * (idx - 1)
-                @views C[end-d+1:end] += A[begin:d]
+                @turbo (@views C[end-d+1:end]) .+= (@views A[begin:d])
             end
 
             for idx in (9÷2)+2:9
                 d = s + dilation * (idx - ((9 ÷ 2) + 2))
-                @views C[begin:end-d+1] += A[d:end]
+                @turbo (@views C[begin:end-d+1]) .+= (@views A[d:end])
             end
 
             for idx in @views INDICES[:, kernel_index]
                 if idx < 5
                     d = e + dilation * (idx - 1)
-                    @views C[end-d+1:end] += G[begin:d]
+                    @turbo (@views C[end-d+1:end]) .+= (@views G[begin:d])
                 elseif idx > 5
                     d = s + dilation * (idx - ((9 ÷ 2) + 2))
-                    @views C[begin:end-d+1] += G[d:end]
+                    @turbo (@views C[begin:end-d+1]) .+= (@views G[d:end])
                 else
-                    C += G
+                    @turbo @views C .+= G
                 end
             end
 
-            biases[feature_index_start+1:feature_index_end] = @views quantile!(
-                _quantiles[1:num_features_this_dilation],
+            @views quantile!(
+                biases[feature_index_start+1:feature_index_end],
                 C,
                 quantiles[feature_index_start+1:feature_index_end],
             )
@@ -103,14 +97,14 @@ function fit_dilations(
     num_features::Unsigned,
     max_dilations_per_kernel::Unsigned,
 )::Tuple{Vector{Int64}, Vector{Int64}}
-    num_features_per_kernel = num_features ÷ NUM_KERNELS
-    true_max_dilations_per_kernel = min(num_features_per_kernel, max_dilations_per_kernel)
+    num_features_per_kernel = Int64(num_features) ÷ NUM_KERNELS
+    true_max_dilations_per_kernel = min(num_features_per_kernel, Int64(max_dilations_per_kernel))
     multiplier = num_features_per_kernel / true_max_dilations_per_kernel
 
     max_exponent = log2((input_length - 1) / (9 - 1))
 
     dilations, num_features_per_dilation =
-        sorted_unique_counts(floor.(Int64, logspace(0, max_exponent, true_max_dilations_per_kernel, base = 2)))
+        sorted_unique_counts(floor.(Int64, logspace(0, max_exponent, true_max_dilations_per_kernel, base = 2.0)))
 
     num_features_per_dilation = floor.(Int64, (num_features_per_dilation * multiplier))
 
@@ -131,10 +125,7 @@ function fit(
     max_dilations_per_kernel::Unsigned = Unsigned(32),
     shuffled::Bool = false,
     rng::AbstractRNG = GLOBAL_RNG,
-)::NamedTuple{
-    (:dilations, :num_features_per_dilation, :biases),
-    Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
-} where {T <: AbstractFloat}
+)::Tuple{Vector{Int64}, Vector{Int64}, Vector{T}} where {T <: AbstractFloat}
     input_length = size(X, 1)
 
     dilations, num_features_per_dilation = fit_dilations(input_length, num_features, max_dilations_per_kernel)
@@ -145,7 +136,15 @@ function fit(
 
     biases = fit_biases(X, dilations, num_features_per_dilation, quantiles, shuffled = shuffled, rng = rng)
 
-    return (dilations = dilations, num_features_per_dilation = num_features_per_dilation, biases = biases)
+    return (dilations, num_features_per_dilation, biases)
+end
+
+@inline function fast_ppv(arr::AbstractVector{T}, bias::T) where T
+    s = 0
+    @turbo for i in eachindex(arr)
+        s += arr[i] < bias
+    end
+    s / length(arr)
 end
 
 function transform(
@@ -172,49 +171,49 @@ function transform(
         A = @views A_threads[:, Threads.threadid()]
         G = @views G_threads[:, Threads.threadid()]
 
-        fill!(C_alpha, 0)
-        fill!(C, 0)
+        fill!(C_alpha, zero(T))
+        fill!(C, zero(T))
 
-        @turbo @. A = _X * -1
-        @turbo @. G = _X * 3
+        @turbo @. A = _X * T(-1)
+        @turbo @. G = _X * T(3)
 
         feature_index_start = 0
 
-        for dilation_index in eachindex(dilations)
+        for dilation_index in 1:length(dilations)
             dilation = dilations[dilation_index]
             padding = ((9 - 1) * dilation) ÷ 2
             num_features_this_dilation = num_features_per_dilation[dilation_index]
 
-            copy!(C_alpha, A)
+            copyto!(C_alpha, A)
 
             s = dilation + 1
             e = input_length - padding
 
             for idx in 1:(9÷2)
                 d = e + dilation * (idx - 1)
-                @views C_alpha[end-d+1:end] += A[begin:d]
+                @turbo (@views C_alpha[end-d+1:end]) .+= (@views A[begin:d])
             end
 
             for idx in (9÷2)+2:9
                 d = s + dilation * (idx - ((9 ÷ 2) + 2))
-                @views C_alpha[begin:end-d+1] += A[d:end]
+                @turbo (@views C_alpha[begin:end-d+1]) .+= (@views A[d:end])
             end
 
             _padding0 = (dilation_index - 1) % 2
             for kernel_index in 1:NUM_KERNELS
                 feature_index_end = feature_index_start + num_features_this_dilation
 
-                copy!(C, C_alpha)
+                copyto!(C, C_alpha)
 
                 for idx in @views INDICES[:, kernel_index]
                     if idx < 5
                         d = e + dilation * (idx - 1)
-                        @views C[end-d+1:end] += G[begin:d]
+                        @turbo (@views C[end-d+1:end]) .+= (@views G[begin:d])
                     elseif idx > 5
                         d = s + dilation * (idx - ((9 ÷ 2) + 2))
-                        @views C[begin:end-d+1] += G[d:end]
+                        @turbo (@views C[begin:end-d+1]) .+= (@views G[d:end])
                     else
-                        C += G
+                        @turbo (C .+= G)
                     end
                 end
 
@@ -222,12 +221,12 @@ function transform(
                 if _padding1 == 0
                     for feature_count in 1:num_features_this_dilation
                         features[feature_index_start+feature_count, example_index] =
-                            @turbo sum(C .> biases[feature_index_start+feature_count]) / length(C)
+                            fast_ppv(C, biases[feature_index_start+feature_count])
                     end
                 else
                     for feature_count in 1:num_features_this_dilation
                         features[feature_index_start+feature_count, example_index] =
-                            @turbo @views sum(C[padding+1:end-padding] .> biases[feature_index_start+feature_count]) / ((length(C) - padding) - (padding + 1) + 1)
+                            fast_ppv((@views C[padding+1:end-padding]), biases[feature_index_start+feature_count])
                     end
                 end
 
@@ -258,46 +257,33 @@ function MLJModelInterface.fit(
     verbosity,
     X::AbstractMatrix{T},
 )::Tuple{
-    NamedTuple{(:dilations, :num_features_per_dilation, :biases), Tuple{Vector{Int64}, Vector{Int64}, Vector{T}}},
+    Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
     Nothing,
     Nothing,
 } where {T <: AbstractFloat}
-    f_res = fit(
+    return fit(
         X,
         num_features = model.num_features,
         max_dilations_per_kernel = model.max_dilations_per_kernel,
         shuffled = model.shuffled,
         rng = model.rng,
-    )
-    return f_res, nothing, nothing
+    ), nothing, nothing
 end
 
 function MLJModelInterface.transform(
     model::MiniRocketModel,
-    fitresult::NamedTuple{
-        (:dilations, :num_features_per_dilation, :biases),
-        Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
-    },
+    fitresult::Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
     Xnew::AbstractMatrix{T},
 )::AbstractMatrix{T} where {T <: AbstractFloat}
     return transform(
         Xnew,
-        dilations = fitresult.dilations,
-        num_features_per_dilation = fitresult.num_features_per_dilation,
-        biases = fitresult.biases,
+        dilations = fitresult[1],
+        num_features_per_dilation = fitresult[2],
+        biases = fitresult[3],
     )
 end
 
-function MLJModelInterface.fitted_params(
-    ::MiniRocketModel,
-    fitresult::NamedTuple{
-        (:dilations, :num_features_per_dilation, :biases),
-        Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
-    },
-)::NamedTuple{
-    (:dilations, :num_features_per_dilation, :biases),
-    Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
-} where {T <: AbstractFloat}
+function MLJModelInterface.fitted_params(::MiniRocketModel, fitresult)
     return fitresult
 end
 
