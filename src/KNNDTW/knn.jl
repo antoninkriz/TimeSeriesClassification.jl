@@ -43,7 +43,17 @@ function MLJModelInterface.fit(::KNNDTWModel, ::Any, X::AbstractMatrix{T}, y::Un
     return ((X, y, w), nothing, nothing)
 end
 
-function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T}) where {T <: AbstractFloat}
+macro conditional_threads(cond, ex)
+    :(
+        if $cond
+            Threads.@threads $ex
+        else
+            $ex
+        end
+    )
+end
+
+@inbounds function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::AbstractMatrix{T}) where {T <: AbstractFloat}
     heaps = [
         FastHeap{T, Tuple{eltype(y), typeof(w) == Nothing ? Nothing : eltype(w)}}(model.K, :max)
         for _ in 1:Threads.nthreads()
@@ -51,9 +61,10 @@ function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T
     classes = MLJModelInterface.classes(y)
     probas = zeros(T, length(classes), size(Xnew, 2))
 
-    @inbounds for q in 1:size(Xnew, 2)
-        # Parallelize thought training dataset
-        Threads.@threads for i in axes(X, 2)
+    # Parallelize thought training dataset when the training dataset is larger than the requested dataset and the other way around 
+    parallel_on_new = size(Xnew, 2) >= size(X, 2)
+    @conditional_threads (parallel_on_new) for q in axes(Xnew, 2)
+        @conditional_threads (!parallel_on_new) for i in axes(X, 2)
             heap = heaps[Threads.threadid()]
 
             if !isempty(heap) && (@views lower_bound!(model.bounding, Xnew[:, q], X[:, i], update_envelope=i == 1)) > first(heap)[1]
