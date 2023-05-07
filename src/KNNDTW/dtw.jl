@@ -23,13 +23,15 @@ mutable struct DTWSakoeChiba{T <: AbstractFloat, Tfun <: Function} <: DTWType
     distance::Tfun
     matrix::Matrix{T}
     radius::Int64
+    match_sizes::Bool
 end
 
 DTWSakoeChiba{T}(;
     distance::Tfun = euclidean_distance,
     matrix::Matrix{T} = T[;;],
     radius::Int64 = 0,
-) where {T <: AbstractFloat, Tfun <: Function} = DTWSakoeChiba{T, Tfun}(distance, matrix, radius)
+    match_sizes::Bool = false
+) where {T <: AbstractFloat, Tfun <: Function} = DTWSakoeChiba{T, Tfun}(distance, matrix, radius, match_sizes)
 
 mutable struct DTWItakura{T <: AbstractFloat, Tfun <: Function} <: DTWType
     distance::Tfun
@@ -96,10 +98,11 @@ end
     end
 
     s = Int64(model.radius)
+    band = (match_sizes ? (row_count - col_count) : 0) + s
 
     model.matrix[1, 1] = model.distance(x[1], y[1])
 
-    for r in 2:min(row_count, 1 + s)
+    for r in 2:min(row_count, 1 + band)
         model.matrix[r, 1] = model.matrix[r-1, 1] + model.distance(x[r], y[1])
     end
 
@@ -107,7 +110,7 @@ end
         model.matrix[1, c] = model.matrix[1, c-1] + model.distance(x[1], y[c])
     end
 
-    for c in 2:col_count, r in max(2, c - s):min(row_count, c + s)
+    for c in 2:col_count, r in max(2, c - s):min(row_count, c + band)
         model.matrix[r, c] =
             model.distance(x[r], y[c]) + min(model.matrix[r-1, c], model.matrix[r, c-1], model.matrix[r-1, c-1])
     end
