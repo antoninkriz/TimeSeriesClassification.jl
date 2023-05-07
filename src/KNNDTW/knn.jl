@@ -4,15 +4,17 @@ import MLJModelInterface
 using CategoricalArrays: AbstractCategoricalArray, CatArrOrSub
 using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
-using .._DTW: DTWType, DTW, dtw
-using .._Utils: FastMaxHeap
+using .._DTW: DTWType, DTW, dtw!
+using .._LB: LBType, LBNone, lower_bound!
+using .._Utils: FastHeap
 
 export KNNDTWModel
 
 MLJModelInterface.@mlj_model mutable struct KNNDTWModel <: MLJModelInterface.Supervised
-    K::Unsigned = Unsigned(1)::(0 < _)
+    K::Int64 = 1::(0 < _)
     weights::Symbol = :uniform::(_ in (:uniform, :distance))
-    distance::DTWType = DTW()
+    distance::DTWType = DTW{AbstractFloat}()
+    bounding::LBType = LBNone()
 end
 
 function MLJModelInterface.reformat(::KNNDTWModel, (X, type))
@@ -42,15 +44,19 @@ function MLJModelInterface.fit(::KNNDTWModel, ::Any, X::AbstractMatrix{T}, y::Un
 end
 
 function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T}) where {T <: AbstractFloat}
-    heap = FastMaxHeap{T, Tuple{eltype(y), typeof(w) == Nothing ? Nothing : eltype(w)}}(model.K)
+    heap = FastHeap{T, Tuple{eltype(y), typeof(w) == Nothing ? Nothing : eltype(w)}}(model.K, :max)
     classes = MLJModelInterface.classes(y)
     probas = zeros(T, length(classes), size(Xnew, 2))
 
-    for q in 1:size(Xnew, 2)
+    @inbounds for q in 1:size(Xnew, 2)
         for i in axes(X, 2)
-            dtw_distance = @views dtw(model.distance, Xnew[:, q], X[:, i])
+            if !isempty(heap) && (@views lower_bound!(model.bounding, Xnew[:, q], X[:, i], update_envelope=i == 1)) > first(heap)[1]
+                continue
+            end
 
-            if isempty(heap) || dtw_distance < max(heap)[1]
+            dtw_distance = @views dtw!(model.distance, Xnew[:, q], X[:, i])
+
+            if isempty(heap) || dtw_distance < first(heap)[1]
                 push!(heap, (dtw_distance, (y[i], w === nothing ? nothing : w[i])))
             end
         end

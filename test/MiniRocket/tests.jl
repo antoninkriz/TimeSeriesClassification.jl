@@ -153,9 +153,9 @@ const BIASES2_RNG::Vector{Float64} = [0.0, 0.0, 11.5986671312232, 0.0, 0.0, 0.0,
     result_machine = fitted_params(mach)
     result_model = MLJModelInterface.fit(m_model, false, M_FIT1)[1]
 
-    @test result_machine.dilations == result_model.dilations
-    @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
-    @test result_machine.biases ≈ result_model.biases
+    @test result_machine.dilations == result_model[1]
+    @test result_machine.num_features_per_dilation == result_model[2]
+    @test result_machine.biases ≈ result_model[3]
 
     @test result_machine.dilations == DILATIONS1
     @test result_machine.num_features_per_dilation == NUM_FEATURES_PER_DILATION1
@@ -172,9 +172,9 @@ end
     result_machine = fitted_params(mach)
     result_model = MLJModelInterface.fit(m_model, false, M_FIT2)[1]
 
-    @test result_machine.dilations == result_model.dilations
-    @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
-    @test result_machine.biases ≈ result_model.biases
+    @test result_machine.dilations == result_model[1]
+    @test result_machine.num_features_per_dilation == result_model[2]
+    @test result_machine.biases ≈ result_model[3]
 
     @test result_machine.dilations == DILATIONS2
     @test result_machine.num_features_per_dilation == NUM_FEATURES_PER_DILATION2
@@ -189,9 +189,9 @@ end
     result_machine = fitted_params(mach)
     result_model = MLJModelInterface.fit(m, false, M_FIT2)[1]
 
-    @test result_machine.dilations == result_model.dilations
-    @test result_machine.num_features_per_dilation == result_model.num_features_per_dilation
-    @test result_machine.biases ≈ result_model.biases
+    @test result_machine.dilations == result_model[1]
+    @test result_machine.num_features_per_dilation == result_model[2]
+    @test result_machine.biases ≈ result_model[3]
 
     @test result_machine.dilations == DILATIONS2
     @test result_machine.num_features_per_dilation == NUM_FEATURES_PER_DILATION2
@@ -204,9 +204,10 @@ end
 
     mach = machine(m_machine, (M_FIT1, :column_based))
     fit!(mach, verbosity=0)
-
     t_machine = transform(mach, (TRANSFORM1, :column_based))
-    t_model = MLJModelInterface.transform(m_model, MLJModelInterface.fit(m_model, false, M_FIT1)[1], TRANSFORM1)
+
+    fp_model =  MLJModelInterface.fit(m_model, false, M_FIT1)[1]
+    t_model = MLJModelInterface.transform(m_model, fp_model, TRANSFORM1)
 
     @test t_machine ≈ t_model
     @test t_machine ≈ TRANSFORMED1

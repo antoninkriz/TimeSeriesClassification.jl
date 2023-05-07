@@ -6,7 +6,6 @@ using Statistics: quantile, quantile!
 using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
 import MLJModelInterface
-import ScientificTypesBase
 
 using .._Utils: sorted_unique_counts, logspace
 
@@ -142,7 +141,7 @@ end
 @inline function fast_ppv(arr::AbstractVector{T}, bias::T) where T
     s = 0
     @turbo for i in eachindex(arr)
-        s += arr[i] < bias
+        s += arr[i] > bias
     end
     s / length(arr)
 end
@@ -284,7 +283,7 @@ function MLJModelInterface.transform(
 end
 
 function MLJModelInterface.fitted_params(::MiniRocketModel, fitresult)
-    return fitresult
+    return (dilations=fitresult[1], num_features_per_dilation=fitresult[2], biases=fitresult[3])
 end
 
 end

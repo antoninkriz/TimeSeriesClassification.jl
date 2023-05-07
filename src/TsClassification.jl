@@ -1,7 +1,6 @@
 module TsClassification
 
 import MLJModelInterface
-import ScientificTypesBase
 
 include("MiniRocket/MiniRocket.jl")
 include("KNNDTW/KNNDTW.jl")
@@ -10,14 +9,14 @@ include("DataSets/DataSets.jl")
 export MiniRocketModel
 using .MiniRocket: MiniRocketModel
 
-export dtw, DTW, DTWSakoeChiba, DTWItakura, KNNDTWModel
-using .KNNDTW: dtw, DTW, DTWSakoeChiba, DTWItakura, KNNDTWModel
+export DTWType, dtw!, DTW, DTWSakoeChiba, DTWItakura, LBType, lower_bound!, LBNone, LBKeogh, KNNDTWModel
+using .KNNDTW: DTWType, dtw!, DTW, DTWSakoeChiba, DTWItakura, LBType, lower_bound!, LBNone, LBKeogh, KNNDTWModel
 
 export DataSets
 import .DataSets
 
 MLJModelInterface.metadata_pkg.(
-    (MiniRocketModel),
+    (MiniRocketModel, KNNDTWModel),
     name = "TsClassification",
     uuid = "4869f98a-92d2-4a27-bbf6-5599fe134177",
     url = "https://github.com/antoninkriz/julia-ts-classification",
@@ -28,10 +27,18 @@ MLJModelInterface.metadata_pkg.(
 
 MLJModelInterface.metadata_model(
     MiniRocketModel,
-    input_scitype = Tuple{Tuple{AbstractMatrix{ScientificTypesBase.Continuous}, ScientificTypesBase.Unknown}},
+    input_scitype = Tuple{AbstractMatrix{MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
     output_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
     descr = "MiniRocket model",
     load_path = "TsClassification.MiniRocketModel",
+)
+
+MLJModelInterface.metadata_model(
+    KNNDTWModel,
+    input_scitype = Tuple{AbstractMatrix{MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
+    output_scitype = AbstractMatrix{<:MLJModelInterface.Finite},
+    descr = "KNN+DTW model",
+    load_path = "TsClassification.KNNDTWModel",
 )
 
 """

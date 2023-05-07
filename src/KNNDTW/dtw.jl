@@ -2,7 +2,7 @@ module _DTW
 
 using .._Utils: euclidean_distance
 
-export dtw,
+export DTWType,
     dtw!,
     dtw_with_itakura_max_slope,
     dtw_with_itakura_max_slope!,
@@ -11,43 +11,43 @@ export dtw,
 
 abstract type DTWType end
 
-mutable struct DTW <: DTWType
-    distance::Function
-    matrix::Union{Nothing, Matrix}
+mutable struct DTW{T <: AbstractFloat, Tfun <: Function} <: DTWType
+    distance::Tfun
+    matrix::Matrix{T}
 end
 
-DTW(; distance::Function = euclidean_distance, matrix::Union{Nothing, Matrix{T}} = nothing) where {T <: AbstractFloat} =
-    DTW(distance, matrix)
+DTW{T}(; distance::Tfun = euclidean_distance, matrix::Matrix{T} = T[;;]) where {T <: AbstractFloat, Tfun <: Function} =
+    DTW{T, Tfun}(distance, matrix)
 
-mutable struct DTWSakoeChiba <: DTWType
-    distance::Function
-    matrix::Union{Nothing, Matrix}
-    radius::Unsigned
+mutable struct DTWSakoeChiba{T <: AbstractFloat, Tfun <: Function} <: DTWType
+    distance::Tfun
+    matrix::Matrix{T}
+    radius::Int64
 end
 
-DTWSakoeChiba(;
-    distance::Function = euclidean_distance,
-    matrix::Union{Nothing, Matrix{T}} = nothing,
-    radius::Unsigned = 0,
-) where {T <: AbstractFloat} = DTWSakoeChiba(distance, matrix, radius)
+DTWSakoeChiba{T}(;
+    distance::Tfun = euclidean_distance,
+    matrix::Matrix{T} = T[;;],
+    radius::Int64 = 0,
+) where {T <: AbstractFloat, Tfun <: Function} = DTWSakoeChiba{T, Tfun}(distance, matrix, radius)
 
-mutable struct DTWItakura <: DTWType
-    distance::Function
-    matrix::Union{Nothing, Matrix}
+mutable struct DTWItakura{T <: AbstractFloat, Tfun <: Function} <: DTWType
+    distance::Tfun
+    matrix::Matrix{T}
     slope::Float64
 end
 
-function DTWItakura(;
-    distance::Function = euclidean_distance,
-    matrix::Union{Nothing, Matrix{T}} = nothing,
+function DTWItakura{T}(;
+    distance::Tfun = euclidean_distance,
+    matrix::Matrix{T} = T[;;],
     slope::Float64 = 1.0,
-) where {T <: AbstractFloat}
+) where {T <: AbstractFloat, Tfun <: Function}
     @assert slope >= 1.0
 
-    DTWItakura(distance, matrix, slope)
+    DTWItakura{T, Tfun}(distance, matrix, slope)
 end
 
-function dtw(model::DTW, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat}
+@inbounds function dtw!(model::Tdtw, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat, Tdtw <: DTW}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows
@@ -56,8 +56,8 @@ function dtw(model::DTW, x::AbstractVector{T}, y::AbstractVector{T})::T where {T
         x, y = y, x
     end
 
-    if model.matrix === nothing || any(size(model.matrix) .< (row_count, col_count))
-        model.matrix = fill(prevfloat(typemax(T)), row_count, col_count)
+    if any(size(model.matrix) .< (row_count, col_count))
+        model.matrix = fill(prevfloat(typemax(T)), max(row_count, size(model.matrix, 1)), max(col_count, size(model.matrix, 2)))
     else
         fill!(model.matrix, prevfloat(typemax(T)))
     end
@@ -80,7 +80,7 @@ function dtw(model::DTW, x::AbstractVector{T}, y::AbstractVector{T})::T where {T
     return sqrt(model.matrix[row_count, col_count])
 end
 
-function dtw(model::DTWSakoeChiba, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat}
+@inbounds function dtw!(model::Tdtw, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat, Tdtw <: DTWSakoeChiba}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows
@@ -90,7 +90,7 @@ function dtw(model::DTWSakoeChiba, x::AbstractVector{T}, y::AbstractVector{T})::
     end
 
     if model.matrix === nothing || any(size(model.matrix) .< (row_count, col_count))
-        model.matrix = fill(prevfloat(typemax(T)), row_count, col_count)
+        model.matrix = fill(prevfloat(typemax(T)), max(row_count, size(model.matrix, 1)), max(col_count, size(model.matrix, 2)))
     else
         fill!(model.matrix, prevfloat(typemax(T)))
     end
@@ -116,7 +116,7 @@ function dtw(model::DTWSakoeChiba, x::AbstractVector{T}, y::AbstractVector{T})::
     return sqrt(model.matrix[row_count, col_count])
 end
 
-function dtw(model::DTWItakura, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat}
+@inbounds function dtw!(model::Tdtw, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat, Tdtw <: DTWItakura}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows
@@ -126,7 +126,7 @@ function dtw(model::DTWItakura, x::AbstractVector{T}, y::AbstractVector{T})::T w
     end
 
     if model.matrix === nothing || any(size(model.matrix) .< (row_count, col_count))
-        model.matrix = fill(prevfloat(typemax(T)), row_count, col_count)
+        model.matrix = fill(prevfloat(typemax(T)), max(row_count, size(model.matrix, 1)), max(col_count, size(model.matrix, 2)))
     else
         fill!(model.matrix, prevfloat(typemax(T)))
     end

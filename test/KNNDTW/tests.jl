@@ -29,35 +29,35 @@ const TEST_X::Matrix{Float64} = [
     0 8
 ]
 
-@testset "KNNDTW.jl - dtw() - Full" begin
-    model = KNNDTW.DTW()
-    r1 = KNNDTW.dtw(model, TS1, TS2)
+@testset "KNNDTW.jl - dtw!() - Full" begin
+    model = KNNDTW.DTW{eltype(TS1)}()
+    r1 = KNNDTW.dtw!(model, TS1, TS2)
     @test r1 ≈ 0.8554589614450465
 
-    r2 = KNNDTW.dtw(model, TS1, TS3)
+    r2 = KNNDTW.dtw!(model, TS1, TS3)
     @test r2 ≈ 1.196169334904773
 end
 
-@testset "KNNDTW.jl - dtw() - SakoeChiba" begin
-    model = KNNDTW.DTWSakoeChiba(radius=Unsigned(2))
-    r1 = KNNDTW.dtw(model, TS1, TS2)
+@testset "KNNDTW.jl - dtw!() - SakoeChiba" begin
+    model = KNNDTW.DTWSakoeChiba{eltype(TS1)}(radius=2)
+    r1 = KNNDTW.dtw!(model, TS1, TS2)
     @test r1 ≈ 0.8554589614450465
 
-    r2 = KNNDTW.dtw(model, TS1, TS3)
+    r2 = KNNDTW.dtw!(model, TS1, TS3)
     @test r2 ≈ 1.6133200246629615
 end
 
-@testset "KNNDTW.jl - dtw() - Itakura" begin
-    model = KNNDTW.DTWItakura(slope=1.5)
-    r1 = KNNDTW.dtw(model, TS1, TS2)
+@testset "KNNDTW.jl - dtw!() - Itakura" begin
+    model = KNNDTW.DTWItakura{eltype(TS1)}(slope=1.5)
+    r1 = KNNDTW.dtw!(model, TS1, TS2)
     @test r1 ≈ 1.0915468341537107
 
-    r2 = KNNDTW.dtw(model, TS1, TS3)
+    r2 = KNNDTW.dtw!(model, TS1, TS3)
     @test r2 ≈ 1.6803668615702465
 end
 
 @testset "KNNDTW.jl - KNN - K=1" begin
-    nn = KNNDTW.KNNDTWModel(K=1)
+    nn = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TS1)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y)
     fit!(mach, verbosity=0)
@@ -68,7 +68,7 @@ end
 end
 
 @testset "KNNDTW.jl - KNN - K=3" begin
-    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance)
+    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TS1)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y, [1.0, 2.0, 3.5])
     fit!(mach, verbosity=0)

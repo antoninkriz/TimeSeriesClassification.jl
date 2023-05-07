@@ -85,7 +85,7 @@ Now it's time to init KNN+DTW model!
 knndtw = KNNDTWModel(
 	K = 3,
 	weights = :distance,
-	distance = DTWSakoeChiba(radius=Unsigned(5))
+	distance = DTWSakoeChiba(radius=5)
 )
 
 # ╔═╡ 56ad9782-3349-4ad6-8a30-12aa8f322d0c
