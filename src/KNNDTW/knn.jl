@@ -10,7 +10,7 @@ using .._Utils: FastHeap
 
 export KNNDTWModel
 
-MLJModelInterface.@mlj_model mutable struct KNNDTWModel <: MLJModelInterface.Supervised
+MLJModelInterface.@mlj_model mutable struct KNNDTWModel <: MLJModelInterface.Probabilistic
     K::Int64 = 1::(0 < _)
     weights::Symbol = :uniform::(_ in (:uniform, :distance))
     distance::DTWType = DTW{AbstractFloat}()
@@ -44,12 +44,18 @@ function MLJModelInterface.fit(::KNNDTWModel, ::Any, X::AbstractMatrix{T}, y::Un
 end
 
 function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T}) where {T <: AbstractFloat}
-    heap = FastHeap{T, Tuple{eltype(y), typeof(w) == Nothing ? Nothing : eltype(w)}}(model.K, :max)
+    heaps = [
+        FastHeap{T, Tuple{eltype(y), typeof(w) == Nothing ? Nothing : eltype(w)}}(model.K, :max)
+        for _ in 1:Threads.nthreads()
+    ]
     classes = MLJModelInterface.classes(y)
     probas = zeros(T, length(classes), size(Xnew, 2))
 
     @inbounds for q in 1:size(Xnew, 2)
-        for i in axes(X, 2)
+        # Parallelize thought training dataset
+        Threads.@threads for i in axes(X, 2)
+            heap = heaps[Threads.threadid()]
+
             if !isempty(heap) && (@views lower_bound!(model.bounding, Xnew[:, q], X[:, i], update_envelope=i == 1)) > first(heap)[1]
                 continue
             end
@@ -61,20 +67,31 @@ function MLJModelInterface.predict(model::KNNDTWModel, (X, y, w), Xnew::Matrix{T
             end
         end
 
+        # Merge heaps from threads into one
+        final_heap = heaps[1]
+        for heap in @views heaps[2:end]
+            for el in heap.data
+                if el[1] < first(final_heap)[1]
+                    push!(final_heap, el)
+                end
+            end
+        end
+
+        # Calculate probabilities
         if model.weights == :uniform
-            for (_, (label, weight)) in @views heap.data[begin:length(heap)]
+            for (_, (label, weight)) in @views final_heap.data[begin:length(final_heap)]
                 ww = (w === nothing ? 1 : weight)
                 probas[findfirst(==(label), classes), q] = one(T) / model.K * ww
             end
         elseif model.weights == :distance
-            for (dist, (label, weight)) in @views heap.data[begin:length(heap)]
+            for (dist, (label, weight)) in @views final_heap.data[begin:length(final_heap)]
                 ww = (w === nothing ? 1 : weight)
                 probas[findfirst(==(label), classes), q] = one(T) / (dist + sqrt(nextfloat(zero(Float64)))) * ww
             end
         end
 
         @turbo probas[:, q] ./= vsum(@views probas[:, q])
-        empty!(heap)
+        empty!.(heaps)
     end
 
     return MLJModelInterface.UnivariateFinite(classes, transpose(probas))

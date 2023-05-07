@@ -96,11 +96,10 @@ end
     end
 
     s = Int64(model.radius)
-    band = (row_count - col_count) + s
 
     model.matrix[1, 1] = model.distance(x[1], y[1])
 
-    for r in 2:min(row_count, 1 + band)
+    for r in 2:min(row_count, 1 + s)
         model.matrix[r, 1] = model.matrix[r-1, 1] + model.distance(x[r], y[1])
     end
 
@@ -108,7 +107,7 @@ end
         model.matrix[1, c] = model.matrix[1, c-1] + model.distance(x[1], y[c])
     end
 
-    for c in 2:col_count, r in max(2, c - s):min(row_count, c + band)
+    for c in 2:col_count, r in max(2, c - s):min(row_count, c + s)
         model.matrix[r, c] =
             model.distance(x[r], y[c]) + min(model.matrix[r-1, c], model.matrix[r, c-1], model.matrix[r-1, c-1])
     end
