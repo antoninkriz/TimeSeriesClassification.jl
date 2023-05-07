@@ -50,4 +50,13 @@ A model type for constructing MiniRocket transformer.
 """
 MiniRocketModel
 
+"""
+$(MLJModelInterface.doc_header(KNNDTWModel))
+
+### KNNDTWModel
+
+A model type for constructing KNN with DTW distances and search space limitation and lower bounds.
+"""
+KNNDTWModel
+
 end

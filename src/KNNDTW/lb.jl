@@ -4,7 +4,7 @@ using LoopVectorization: @turbo
 using VectorizedStatistics: vsum
 using .._Utils: FastHeap
 
-export lower_bound!, LBNone, LBKeogh
+export LBType, lower_bound!, LBNone, LBKeogh
 
 abstract type LBType end
 
