@@ -98,7 +98,7 @@ end
     end
 
     s = Int64(model.radius)
-    band = (match_sizes ? (row_count - col_count) : 0) + s
+    band = (model.match_sizes ? (row_count - col_count) : 0) + s
 
     model.matrix[1, 1] = model.distance(x[1], y[1])
 
