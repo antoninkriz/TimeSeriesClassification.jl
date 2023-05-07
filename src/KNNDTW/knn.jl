@@ -45,10 +45,10 @@ end
 
 macro conditional_threads(cond, ex)
     :(
-        if $cond
-            Threads.@threads $ex
+        if $(esc(cond))
+            Threads.@threads $(esc(ex))
         else
-            $ex
+            $(esc(ex))
         end
     )
 end
