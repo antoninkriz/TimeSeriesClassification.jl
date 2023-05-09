@@ -155,7 +155,7 @@ function MLJModelInterface.predict(
             if has_inf
                 (@views probas[:, q]) .= isinf.(@views probas[:, q])
             end
-            probas[:, q] ./= sum(@views probas[:, q])
+            @turbo probas[:, q] ./= vsum(@views probas[:, q])
 
             empty!.(heaps)
             empty!(final_heap)

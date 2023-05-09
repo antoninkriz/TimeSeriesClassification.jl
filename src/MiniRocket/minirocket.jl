@@ -5,13 +5,14 @@ using StaticArrays: SMatrix
 using Statistics: quantile, quantile!
 using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
+using ChunkSplitters: chunks
 import MLJModelInterface
 
-using .._Utils: sorted_unique_counts, logspace
+using .._Utils: sorted_unique_counts, logspace, RangeAsArray
 
 export MiniRocketModel
 
-const NUM_KERNELS = 84
+const NUM_KERNELS::Int64 = 84
 
 const INDICES::SMatrix{3, NUM_KERNELS, Int64} = [
     1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 3 3 3 3 3 3 3 3 3 3 3 3 3 3 3 4 4 4 4 4 4 4 4 4 4 5 5 5 5 5 5 6 6 6 7
@@ -152,84 +153,87 @@ function transform(
     num_features_per_dilation::Vector{Int64},
     biases::Vector{T},
 )::Matrix{T} where {T <: AbstractFloat}
+    n_chunks = Threads.nthreads()
     input_length, num_examples = size(X)
 
     features = zeros(T, (NUM_KERNELS * vsum(num_features_per_dilation), num_examples))
 
     # Small allocations might be faster than this thing. This needs testing.
-    C_alpha_theads = zeros(T, input_length, Threads.nthreads())
-    C_theads = zeros(T, input_length, Threads.nthreads())
-    A_threads = zeros(T, input_length, Threads.nthreads())
-    G_threads = zeros(T, input_length, Threads.nthreads())
+    C_alpha_theads = zeros(T, input_length, n_chunks)
+    C_theads = zeros(T, input_length, n_chunks)
+    A_threads = zeros(T, input_length, n_chunks)
+    G_threads = zeros(T, input_length, n_chunks)
 
-    @inbounds Threads.@threads for example_index in 1:num_examples
-        _X = @views X[:, example_index]
+    @inbounds Threads.@threads for (xrange, chunk_id) in chunks(RangeAsArray(1:num_examples), n_chunks, :batch)
+        for example_index in xrange
+            _X = @views X[:, example_index]
 
-        C_alpha = @views C_alpha_theads[:, Threads.threadid()]
-        C = @views C_theads[:, Threads.threadid()]
-        A = @views A_threads[:, Threads.threadid()]
-        G = @views G_threads[:, Threads.threadid()]
+            C_alpha = @views C_alpha_theads[:, chunk_id]
+            C = @views C_theads[:, chunk_id]
+            A = @views A_threads[:, chunk_id]
+            G = @views G_threads[:, chunk_id]
 
-        fill!(C_alpha, zero(T))
-        fill!(C, zero(T))
+            fill!(C_alpha, zero(T))
+            fill!(C, zero(T))
 
-        @turbo @. A = _X * T(-1)
-        @turbo @. G = _X * T(3)
+            @turbo @. A = _X * T(-1)
+            @turbo @. G = _X * T(3)
 
-        feature_index_start = 0
+            feature_index_start = 0
 
-        for dilation_index in 1:length(dilations)
-            dilation = dilations[dilation_index]
-            padding = ((9 - 1) * dilation) ÷ 2
-            num_features_this_dilation = num_features_per_dilation[dilation_index]
+            for dilation_index in 1:length(dilations)
+                dilation = dilations[dilation_index]
+                padding = ((9 - 1) * dilation) ÷ 2
+                num_features_this_dilation = num_features_per_dilation[dilation_index]
 
-            copyto!(C_alpha, A)
+                copyto!(C_alpha, A)
 
-            s = dilation + 1
-            e = input_length - padding
+                s = dilation + 1
+                e = input_length - padding
 
-            for idx in 1:(9÷2)
-                d = e + dilation * (idx - 1)
-                @turbo (@views C_alpha[end-d+1:end]) .+= (@views A[begin:d])
-            end
+                for idx in 1:(9÷2)
+                    d = e + dilation * (idx - 1)
+                    @turbo (@views C_alpha[end-d+1:end]) .+= (@views A[begin:d])
+                end
 
-            for idx in (9÷2)+2:9
-                d = s + dilation * (idx - ((9 ÷ 2) + 2))
-                @turbo (@views C_alpha[begin:end-d+1]) .+= (@views A[d:end])
-            end
+                for idx in (9÷2)+2:9
+                    d = s + dilation * (idx - ((9 ÷ 2) + 2))
+                    @turbo (@views C_alpha[begin:end-d+1]) .+= (@views A[d:end])
+                end
 
-            _padding0 = (dilation_index - 1) % 2
-            for kernel_index in 1:NUM_KERNELS
-                feature_index_end = feature_index_start + num_features_this_dilation
+                _padding0 = (dilation_index - 1) % 2
+                for kernel_index in 1:NUM_KERNELS
+                    feature_index_end = feature_index_start + num_features_this_dilation
 
-                copyto!(C, C_alpha)
+                    copyto!(C, C_alpha)
 
-                for idx in @views INDICES[:, kernel_index]
-                    if idx < 5
-                        d = e + dilation * (idx - 1)
-                        @turbo (@views C[end-d+1:end]) .+= (@views G[begin:d])
-                    elseif idx > 5
-                        d = s + dilation * (idx - ((9 ÷ 2) + 2))
-                        @turbo (@views C[begin:end-d+1]) .+= (@views G[d:end])
+                    for idx in @views INDICES[:, kernel_index]
+                        if idx < 5
+                            d = e + dilation * (idx - 1)
+                            @turbo (@views C[end-d+1:end]) .+= (@views G[begin:d])
+                        elseif idx > 5
+                            d = s + dilation * (idx - ((9 ÷ 2) + 2))
+                            @turbo (@views C[begin:end-d+1]) .+= (@views G[d:end])
+                        else
+                            @turbo (C .+= G)
+                        end
+                    end
+
+                    _padding1 = (_padding0 + (kernel_index - 1)) % 2
+                    if _padding1 == 0
+                        for feature_count in 1:num_features_this_dilation
+                            features[feature_index_start+feature_count, example_index] =
+                                fast_ppv(C, biases[feature_index_start+feature_count])
+                        end
                     else
-                        @turbo (C .+= G)
+                        for feature_count in 1:num_features_this_dilation
+                            features[feature_index_start+feature_count, example_index] =
+                                fast_ppv((@views C[padding+1:end-padding]), biases[feature_index_start+feature_count])
+                        end
                     end
-                end
 
-                _padding1 = (_padding0 + (kernel_index - 1)) % 2
-                if _padding1 == 0
-                    for feature_count in 1:num_features_this_dilation
-                        features[feature_index_start+feature_count, example_index] =
-                            fast_ppv(C, biases[feature_index_start+feature_count])
-                    end
-                else
-                    for feature_count in 1:num_features_this_dilation
-                        features[feature_index_start+feature_count, example_index] =
-                            fast_ppv((@views C[padding+1:end-padding]), biases[feature_index_start+feature_count])
-                    end
+                    feature_index_start = feature_index_end
                 end
-
-                feature_index_start = feature_index_end
             end
         end
     end

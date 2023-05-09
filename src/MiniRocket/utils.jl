@@ -1,8 +1,9 @@
 module _Utils
 
+import Base
 using LoopVectorization: @turbo
 
-export sorted_unique_counts, logspace
+export sorted_unique_counts, logspace, RangeAsArray
 
 function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T}, Vector{Int64}} where {T}
     if isempty(arr)
@@ -35,5 +36,14 @@ function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T}, Vector{Int64}} w
 end
 
 @inline logspace(start::Real, stop::Real, n::Real; base::Real = 10) = @turbo @fastmath base .^ range(start, stop, n)
+
+# This is terrinle hack that makes the code look much nicer unless you look bellow the hood to make the ChunkSplitters.chunks work well with ranges as well 
+struct RangeAsArray <: AbstractArray{Nothing, 0}
+    rage::UnitRange
+end
+
+Base.firstindex(rage::RangeAsArray) = Base.firstindex(rage.rage)
+Base.lastindex(rage::RangeAsArray) = Base.lastindex(rage.rage)
+Base.length(rage::RangeAsArray) = Base.length(rage.rage)
 
 end
