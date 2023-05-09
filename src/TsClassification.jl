@@ -27,7 +27,7 @@ MLJModelInterface.metadata_pkg.(
 
 MLJModelInterface.metadata_model(
     MiniRocketModel,
-    input_scitype = Tuple{AbstractMatrix{MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
+    input_scitype = Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
     output_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
     descr = "MiniRocket model",
     load_path = "TsClassification.MiniRocketModel",
@@ -35,7 +35,7 @@ MLJModelInterface.metadata_model(
 
 MLJModelInterface.metadata_model(
     KNNDTWModel,
-    input_scitype = Tuple{AbstractMatrix{MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
+    input_scitype = AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}},
     output_scitype = AbstractMatrix{<:MLJModelInterface.Finite},
     descr = "KNN+DTW model",
     load_path = "TsClassification.KNNDTWModel",

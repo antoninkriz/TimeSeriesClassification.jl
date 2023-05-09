@@ -253,7 +253,7 @@ MLJModelInterface.selectrows(::MiniRocketModel, I, Xmatrix) = (view(Xmatrix, :, 
 
 function MLJModelInterface.fit(
     model::MiniRocketModel,
-    verbosity,
+    ::Any,
     X::AbstractMatrix{T},
 )::Tuple{
     Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},

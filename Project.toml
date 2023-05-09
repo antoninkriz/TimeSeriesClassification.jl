@@ -6,6 +6,7 @@ version = "0.0.1"
 [deps]
 CategoricalArrays = "324d7699-5711-5eae-9e2f-1d82baa6b597"
 CategoricalDistributions = "af321ab8-2d2e-40a6-b165-3d674595d28e"
+ChunkSplitters = "ae650224-84b6-46f8-82ea-d812ca08434e"
 Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"

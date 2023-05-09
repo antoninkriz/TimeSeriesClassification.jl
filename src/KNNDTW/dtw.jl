@@ -16,8 +16,8 @@ mutable struct DTW{T <: AbstractFloat, Tfun <: Function} <: DTWType
     matrix::Matrix{T}
 end
 
-DTW{T}(; distance::Tfun = euclidean_distance, matrix::Matrix{T} = T[;;]) where {T <: AbstractFloat, Tfun <: Function} =
-    DTW{T, Tfun}(distance, matrix)
+DTW{T}(; distance::Tfun = euclidean_distance) where {T <: AbstractFloat, Tfun <: Function} =
+    DTW{T, Tfun}(distance, T[;;])
 
 mutable struct DTWSakoeChiba{T <: AbstractFloat, Tfun <: Function} <: DTWType
     distance::Tfun
@@ -28,10 +28,9 @@ end
 
 DTWSakoeChiba{T}(;
     distance::Tfun = euclidean_distance,
-    matrix::Matrix{T} = T[;;],
     radius::Int64 = 0,
     match_sizes::Bool = false
-) where {T <: AbstractFloat, Tfun <: Function} = DTWSakoeChiba{T, Tfun}(distance, matrix, radius, match_sizes)
+) where {T <: AbstractFloat, Tfun <: Function} = DTWSakoeChiba{T, Tfun}(distance, T[;;], radius, match_sizes)
 
 mutable struct DTWItakura{T <: AbstractFloat, Tfun <: Function} <: DTWType
     distance::Tfun
@@ -41,12 +40,11 @@ end
 
 function DTWItakura{T}(;
     distance::Tfun = euclidean_distance,
-    matrix::Matrix{T} = T[;;],
     slope::Float64 = 1.0,
 ) where {T <: AbstractFloat, Tfun <: Function}
     @assert slope >= 1.0
 
-    DTWItakura{T, Tfun}(distance, matrix, slope)
+    DTWItakura{T, Tfun}(distance, T[;;], slope)
 end
 
 @inbounds function dtw!(model::Tdtw, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat, Tdtw <: DTW}
@@ -79,7 +77,7 @@ end
             model.distance(x[r], y[c]) + min(model.matrix[r-1, c], model.matrix[r, c-1], model.matrix[r-1, c-1])
     end
 
-    return sqrt(model.matrix[row_count, col_count])
+    return model.matrix[row_count, col_count]
 end
 
 @inbounds function dtw!(model::Tdtw, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat, Tdtw <: DTWSakoeChiba}
@@ -115,7 +113,7 @@ end
             model.distance(x[r], y[c]) + min(model.matrix[r-1, c], model.matrix[r, c-1], model.matrix[r-1, c-1])
     end
 
-    return sqrt(model.matrix[row_count, col_count])
+    return model.matrix[row_count, col_count]
 end
 
 @inbounds function dtw!(model::Tdtw, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat, Tdtw <: DTWItakura}
@@ -160,7 +158,7 @@ end
             model.distance(x[r], y[c]) + min(model.matrix[r-1, c], model.matrix[r, c-1], model.matrix[r-1, c-1])
     end
 
-    return sqrt(model.matrix[row_count, col_count])
+    return model.matrix[row_count, col_count]
 end
 
 end

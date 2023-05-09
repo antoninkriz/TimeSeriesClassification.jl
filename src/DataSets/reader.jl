@@ -1,7 +1,5 @@
 module _Reader
 
-using Base: IOError
-
 export read_ts_file
 
 macro read_assert(ex::Union{Symbol, Expr, Bool}, msg::Union{Expr, AbstractString})

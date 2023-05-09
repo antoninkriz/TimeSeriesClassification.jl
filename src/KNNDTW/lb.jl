@@ -2,7 +2,7 @@ module _LB
 
 using LoopVectorization: @turbo
 using VectorizedStatistics: vsum
-using .._Utils: FastHeap
+using .._Utils: FastDequeue
 
 export LBType, lower_bound!, LBNone, LBKeogh
 
@@ -49,29 +49,46 @@ function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::Abstr
         lb.diff = Vector{T}(undef, length(enveloped))
     end
 
+    # TODO: Indexed
     if update_envelope
-        upper_heap = FastHeap{T, Nothing}(2 * lb.radius + 1, :min)
-        lower_heap = FastHeap{T, Nothing}(2 * lb.radius + 1, :max)
+        upper_deque = FastDequeue{Tuple{T, Int64}}(2 * lb.radius + 1)
+        lower_deque = FastDequeue{Tuple{T, Int64}}(2 * lb.radius + 1)
 
         # Init first elements
-        @inbounds for x in @views enveloped[begin:lb.radius + 1]
-            push!(upper_heap, (x, nothing))
-            push!(lower_heap, (x, nothing))
+        @inbounds for i in 1:lb.radius + 1
+            push!(upper_deque, (enveloped[i], i))
+            push!(lower_deque, (enveloped[i], i))
         end
 
         # Move min+max window over the series
         @inbounds for i in 1:length(enveloped) - lb.radius
-            push!(upper_heap, (enveloped[i + lb.radius], nothing))
-            push!(lower_heap, (enveloped[i + lb.radius], nothing))
+            if !isempty(upper_deque) && first(upper_deque)[2] <= i - lb.radius
+                popfirst!(upper_deque)
+            end
 
-            lb.upper_envelope[i] = first(upper_heap)[1]
-            lb.lower_envelope[i] = first(lower_heap)[1]
+            if !isempty(lower_deque) && first(lower_deque)[2] <= i - lb.radius
+                popfirst!(lower_deque)
+            end
+
+            while !isempty(lower_deque) && last(upper_deque)[1] > enveloped[i + lb.radius]
+                pop!(lower_deque)
+            end
+
+            while !isempty(upper_deque) && last(upper_deque)[1] < enveloped[i + lb.radius]
+                pop!(upper_deque)
+            end
+
+            push!(upper_deque, (enveloped[i + lb.radius], i))
+            push!(lower_deque, (enveloped[i + lb.radius], i))
+
+            lb.upper_envelope[i] = first(upper_deque)[1]
+            lb.lower_envelope[i] = first(lower_deque)[1]
         end
 
         # Fill rest
         @inbounds for i in (length(enveloped) - lb.radius):length(enveloped)
-            lb.upper_envelope[i] = first(upper_heap)[1]
-            lb.lower_envelope[i] = first(lower_heap)[1]
+            lb.upper_envelope[i] = first(upper_deque)[1]
+            lb.lower_envelope[i] = first(lower_deque)[1]
         end
     end
 
