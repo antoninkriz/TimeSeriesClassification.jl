@@ -4,7 +4,7 @@ using LoopVectorization: @turbo
 
 using .._Reader: read_ts_file
 
-export load_dataset, dataset_flatten_to_matrix, DEFAULT_DIR, AbstractLoader
+export load_dataset, load_dataset_metadata, dataset_flatten_to_matrix, DEFAULT_DIR, AbstractLoader
 
 const DEFAULT_DIR = ".julia_ts_classification"
 
@@ -21,6 +21,22 @@ function load_dataset(
     missing_symbol::AbstractString = "?",
 )::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
     read_ts_file(path, T, replace_missing_by, missing_symbol)
+end
+
+function load_dataset_metadata(
+    path::AbstractString,
+)::NamedTuple{(
+    :problem_name,
+    :dimension,
+    :series_length,
+    :has_timestamps,
+    :has_missing,
+    :is_classification,
+    :has_classlabel,
+    :class_labels
+), Tuple{String, Int64, Int64, Bool, Bool, Bool, Bool, Bool, Bool, Set{String}}}
+    metadata, _, _ = read_ts_file_metadata(path, T, replace_missing_by, missing_symbol)
+    return metadata
 end
 
 function dataset_flatten_to_matrix(dataset::Vector{Vector{Vector{T}}})::Matrix{T} where {T}

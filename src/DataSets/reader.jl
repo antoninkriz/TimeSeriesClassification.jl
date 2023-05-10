@@ -70,39 +70,40 @@ function parse(
     line::AbstractString,
     line_number::Int64,
     dimension::Int64,
-    series_length::Int64,
     has_timestamps::Bool,
-    has_missing::Bool,
-    is_equallength::Bool,
     is_classification::Bool,
-    class_labels::Set{String},
 )::Tuple{Vector{Vector{T}}, String} where {T}
     @read_assert dimension == 1 "Multivariate datasets are not supported yed"
     @read_assert !has_timestamps "Datasets with timetamps are not supported yed"
     @read_assert is_classification "Datasets for regression are not supported yed"
 
     spl = split(line, ':')
-    @read_assert length(spl) == 2 "Invalid data on line $line: incorrect number of dimensions"
+    @read_assert length(spl) == 2 "Invalid data on line $line_number: incorrect number of dimensions"
 
-    @inline str_to_num(s::AbstractString)::T = begin
-        if s === missing_symbol
-            return replace_missing_by
+    return [
+        begin
+            if s === missing_symbol
+                replace_missing_by
+            else
+                tmp = tryparse(T, s)
+                @read_assert tmp !== nothing "Invalid data on line $line_number: invalid number"
+                tmp
+            end
         end
-
-        tmp = tryparse(T, s)
-        @read_assert tmp !== nothing "Invalid data on line $line: invalid number"
-        return tmp
-    end
-
-    [str_to_num.(split(spl[1], ','))], spl[2]
+        for s in split(spl[1], ',')
+    ], spl[2]
 end
 
-function read_ts_file(
-    path::AbstractString,
-    ::Type{T} = Float64,
-    replace_missing_by::T = NaN64,
-    missing_symbol::AbstractString = "?",
-)::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
+function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
+    :problem_name,
+    :dimension,
+    :series_length,
+    :has_timestamps,
+    :has_missing,
+    :is_classification,
+    :has_classlabel,
+    :class_labels
+), Tuple{String, Int64, Int64, Bool, Bool, Bool, Bool, Bool, Bool, Set{String}}}, Base.EachLine{IOStream}, Int64}
     # Parsing info
     started_metadata::Bool = false
 
@@ -130,10 +131,11 @@ function read_ts_file(
     tag_classlabel::Bool = false
     tag_data::Bool = false
 
-    outX::Vector{Vector{Vector{T}}} = []
-    outY::Vector{String} = []
+    iterator = eachline(path)
+    ln = 0
 
-    for (line_number, line) in enumerate(eachline(path))
+    for (line_number, line) in enumerate(iterator)
+        ln = line_number
         line = lowercase(strip(line))
 
         # Skip blank lines
@@ -141,24 +143,7 @@ function read_ts_file(
             continue
         end
 
-        if tag_data
-            x, y = parse(
-                T,
-                replace_missing_by,
-                missing_symbol,
-                line,
-                line_number,
-                dimension,
-                series_length,
-                has_timestamps,
-                has_missing,
-                is_equallength,
-                has_classlabel,
-                class_labels,
-            )
-            push!(outX, x)
-            push!(outY, y)
-        elseif startswith(line, '#')
+        if startswith(line, '#')
             @read_assert !started_metadata && !tag_data "Description of the dataset is allowed only before metadata and dataset blocks"
         elseif startswith(line, "@problemname")
             @read_assert !tag_data "Metadata must come before data"
@@ -205,11 +190,67 @@ function read_ts_file(
             @read_assert xor(has_target_label, has_classlabel) "Tags @targetlabel forbids tag @classlabel and vice versa"
             @read_assert tag_equallength == tag_serieslength "Tag @equallength requires @serieslength and vice versa"
             @read_assert xor(is_univariate, tag_dimension) "@univariate being true forbids setting tag @dimension and vice versa"
-
+        
             tag_data = true
+            break
         else
+            @read_assert !tag_data "Found @data tag while still reading metadata. This shouldn't have happened."
             @read_assert false "Unexpected token on line $line_number"
         end
+    end
+
+    return (
+        problem_name=problem_name,
+        dimension=dimension,
+        series_length=series_length,
+        has_timestamps=has_timestamps,
+        has_missing=has_missing,
+        is_classification=is_classification,
+        has_classlabel=has_classlabel,
+        class_labels=class_labels,
+    ), iterator, ln
+end
+
+function read_ts_file(
+    path::AbstractString,
+    ::Type{T} = Float64,
+    replace_missing_by::T = NaN64,
+    missing_symbol::AbstractString = "?",
+)::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
+    (
+        _,
+        dimension,
+        _,
+        has_timestamps,
+        _,
+        is_classification,
+        _,
+        _,
+    ), iterator, ln = read_ts_file_metadata(path)
+
+    outX::Vector{Vector{Vector{T}}} = []
+    outY::Vector{String} = []
+
+    for (line_number, line) in enumerate(iterator)
+        line = lowercase(strip(line))
+
+        # Skip blank lines
+        if isempty(line)
+            continue
+        end
+
+        x, y = parse(
+            T,
+            replace_missing_by,
+            missing_symbol,
+            line,
+            ln + line_number,
+            dimension,
+            has_timestamps,
+            is_classification,
+        )
+        push!(outX, x)
+        push!(outY, y)
     end
 
     return outX, outY
