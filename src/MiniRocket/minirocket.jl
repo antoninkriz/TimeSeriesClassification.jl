@@ -39,7 +39,7 @@ function fit_biases(
     A = zeros(T, input_length)
     G = zeros(T, input_length)
 
-    @inbounds for dilation_index in eachindex(dilations)
+    @fastmath @inbounds for dilation_index in eachindex(dilations)
         dilation = dilations[dilation_index]
         padding = ((9 - 1) * dilation) ÷ 2
         num_features_this_dilation = num_features_per_dilation[dilation_index]
@@ -164,7 +164,7 @@ function transform(
     A_threads = zeros(T, input_length, n_chunks)
     G_threads = zeros(T, input_length, n_chunks)
 
-    @inbounds Threads.@threads for (xrange, chunk_id) in chunks(RangeAsArray(1:num_examples), n_chunks, :batch)
+    @fastmath @inbounds Threads.@threads for (xrange, chunk_id) in chunks(RangeAsArray(1:num_examples), n_chunks, :batch)
         for example_index in xrange
             _X = @views X[:, example_index]
 
