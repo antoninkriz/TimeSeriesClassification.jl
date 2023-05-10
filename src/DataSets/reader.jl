@@ -187,7 +187,7 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
             @read_assert started_metadata "Metadata must come before data"
             @read_assert tag_problemname && tag_timestamps && tag_missing && tag_univariate && tag_equallength "Incomplete metadata"
             @read_assert xor(has_target_label, has_classlabel) "Tags @targetlabel forbids tag @classlabel and vice versa"
-            @read_assert tag_equallength == tag_serieslength "Tag @equallength requires @serieslength and vice versa"
+            @read_assert is_equallength && series_length != 0 "Tag @equallength requires non-zero @serieslength and vice versa"
             @read_assert xor(is_univariate, tag_dimension) "@univariate being true forbids setting tag @dimension and vice versa"
         
             tag_data = true
