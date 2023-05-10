@@ -17,7 +17,7 @@ end
 function load_dataset(
     path::AbstractString,
     ::Type{T} = Float64;
-    replace_missing_by::T = NaN64,
+    replace_missing_by::T = T(NaN),
     missing_symbol::AbstractString = "?",
 )::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
     read_ts_file(path, T, replace_missing_by, missing_symbol)

@@ -240,7 +240,7 @@ function _Loader.load_dataset(
     ::Type{T} = Float64;
     dataset_path::Union{Nothing, AbstractString} = nothing,
     tmp_path::Union{Nothing, AbstractString} = nothing,
-    replace_missing_by::T = NaN64,
+    replace_missing_by::T = T(NaN),
     missing_symbol::AbstractString = "?",
     force::Bool = false,
 ) where {T <: AbstractFloat}
