@@ -83,7 +83,7 @@ end
 @testset "KNNDTW.jl - lower_bound!() - LBKeogh" begin
     lb = KNNDTW.LBKeogh{eltype(TS1)}(radius=1)
     @test KNNDTW.lower_bound!(lb, TS3, TS4) ≈ 5.01243886
-    @test KNNDTW.lower_bound!(lb, TS1, TS4, update_envelope = false) ≈ 5.01243886
+    @test KNNDTW.lower_bound!(lb, TS1, TS4, update = false) ≈ 5.01243886
     @test KNNDTW.lower_bound!(lb, TS1, TS4) ≈ 0.94498057
     @test_throws AssertionError KNNDTW.lower_bound!(lb, TS1, TS2)
 
@@ -140,4 +140,20 @@ end
     fit!(mach, verbosity=0)
     pred = predict(mach, (TS2[:,:], :column_based))
     @test pdf.(pred, 1337) ≈ [1.0]
+end
+
+@testset "KNNDTW.jl - KNN - K=1 - repeated is same" begin
+    nn1 = KNNDTW.KNNDTWModel(K=2, distance=KNNDTW.DTW{eltype(TS1)}())
+    nn2 = KNNDTW.KNNDTWModel(K=2, distance=KNNDTW.DTW{eltype(TS1)}())
+
+    mach1 = machine(nn1, (TRAIN_X, :column_based), TRAIN_Y)
+    mach2 = machine(nn2, (TRAIN_X, :column_based), TRAIN_Y)
+
+    fit!(mach1, verbosity=0)
+    fit!(mach2, verbosity=0)
+
+    pred1 = predict_mode(mach1, (TEST_X, :column_based))
+    pred2 = predict_mode(mach2, (TEST_X, :column_based))
+
+    @test pred1 == pred2
 end

@@ -104,22 +104,26 @@ function MLJModelInterface.predict(
     classes = MLJModelInterface.classes(y)
     probas = zeros(T, length(classes), length(Xnew))
     
-    @conditional_threads parallel_on_Xnew for (rangeXnew, chunk_id_xnew) in chunks(Xnew, parallel_on_Xnew ? n_chunks : 1, :batch)
-        @inbounds for q in rangeXnew
+    @inbounds @conditional_threads parallel_on_Xnew for (rangeXnew, chunk_id_xnew) in chunks(Xnew, parallel_on_Xnew ? n_chunks : 1, :batch)
+        for q in rangeXnew
             @conditional_threads !parallel_on_Xnew for (rangeX, chunk_id_x) in chunks(X, parallel_on_Xnew ? 1 : n_chunks, :batch)
                 chunk_id = parallel_on_Xnew ? chunk_id_xnew : chunk_id_x
+                heap = heaps[chunk_id]
+                distance = distances[chunk_id]
+                bounding = boundings[chunk_id]
 
                 for i in rangeX
-                    if !isempty(heaps[chunk_id]) && (@views lower_bound!(boundings[chunk_id], Xnew[q], X[i], update_envelope=i == 1)) > first(heaps[chunk_id])[1]
+                    if !isempty(heap) && (@views lower_bound!(bounding, Xnew[q], X[i], update=i == 1)) > first(heap)[1]
+                        pritnln("WTF")
                         continue
                     end
         
-                    dtw_distance = @views dtw!(distances[chunk_id], Xnew[q], X[i])
+                    dtw_distance = @views dtw!(distance, Xnew[q], X[i])
 
-                    if length(heaps[chunk_id]) != model.K
-                        push!(heaps[chunk_id], (dtw_distance, y[i]))
-                    elseif dtw_distance < first(heaps[chunk_id])[1]
-                        pushfirst!(heaps[chunk_id], (dtw_distance, y[i]))
+                    if length(heap) < model.K
+                        push!(heap, (dtw_distance, y[i]))
+                    elseif dtw_distance < first(heap)[1]
+                        pushfirst!(heap, (dtw_distance, y[i]))
                     end
                 end
             end
@@ -153,12 +157,15 @@ function MLJModelInterface.predict(
 
             has_inf = findfirst(isinf, @views probas[:, q]) !== nothing
             if has_inf
-                (@views probas[:, q]) .= isinf.(@views probas[:, q])
+                @turbo (@views probas[:, q]) .= isinf.(@views probas[:, q])
             end
             @turbo probas[:, q] ./= vsum(@views probas[:, q])
 
-            empty!.(heaps)
-            empty!(final_heap)
+            if parallel_on_Xnew
+                empty!(final_heap)
+            else
+                empty!.(heaps)
+            end
         end
     end
 

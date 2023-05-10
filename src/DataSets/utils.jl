@@ -25,7 +25,7 @@ function unzip(file::AbstractString, output_directory::AbstractString = "")
     archive = ZipFile.Reader(file_full_path)
     p = Progress(length(archive.files), "Extracting - $(length(archive.files)) items:")
 
-    Threads.@threads for f in archive.files
+    for f in archive.files
         fullFilePath = joinpath(output_directory, f.name)
         if (endswith(f.name, "/") || endswith(f.name, "\\"))
             mkpath(fullFilePath)

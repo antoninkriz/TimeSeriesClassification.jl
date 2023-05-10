@@ -238,10 +238,10 @@ function _Loader.load_dataset(
     ::Type{UCRArchive},
     name::Symbol,
     dataset_path::Union{Nothing, AbstractString} = nothing,
-    tmp_path::Union{Nothing, AbstractString} = nothing,
-    force_download::Bool = false,
+    tmp_path::Union{Nothing, AbstractString} = nothing;
+    force::Bool = false,
 )
-    dataset_full_path = download_datasets(dataset_path, tmp_path, force_download)
+    dataset_full_path = download_datasets(dataset_path, tmp_path, force)
 
     @info "Reading datasets..."
     trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"))
@@ -253,9 +253,11 @@ function _Loader.load_dataset_metadata(
     ::Type{UCRArchive},
     name::Symbol,
     dataset_path::Union{Nothing, AbstractString} = nothing,
-    tmp_path::Union{Nothing, AbstractString} = nothing,
-    force_download::Bool = false,
+    tmp_path::Union{Nothing, AbstractString} = nothing;
+    force::Bool = false,
 )
+    dataset_full_path = download_datasets(dataset_path, tmp_path, force)
+
     train_metadata = load_dataset_metadata(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"))
     test_metadata = load_dataset_metadata(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"))
     return train_metadata, test_metadata

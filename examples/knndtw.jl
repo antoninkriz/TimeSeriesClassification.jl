@@ -57,6 +57,9 @@ Which datasets are even available?
 # ╔═╡ cdb0f86f-6e98-462b-be76-ebdebe82da67
 ucr_archive_datasets = DataSets.list_available_datasets(UCRArchive)
 
+# ╔═╡ cc11fe3b-71bb-4bd7-a3e3-9706ece94764
+metadata_train, metadata_test = DataSets.load_dataset_metadata(UCRArchive, :Chinatown)
+
 # ╔═╡ 50d6bf71-2ea4-4f65-9c20-b0486e1d00d9
 md"
 Let's try Chinatown dataset. Don't forget to covnert the input data into matrices witch samples stored in colums! Julia is column-major and so is this implementation of MiniRocket.
@@ -85,7 +88,7 @@ Now it's time to init KNN+DTW model!
 knndtw = KNNDTWModel(
 	K = 3,
 	weights = :distance,
-	distance = DTWSakoeChiba(radius=5)
+	distance = DTWSakoeChiba{eltype(trainX)}(radius=5)
 )
 
 # ╔═╡ 56ad9782-3349-4ad6-8a30-12aa8f322d0c
@@ -105,16 +108,16 @@ md"
 "
 
 # ╔═╡ 6341b366-b832-4a1e-8ffb-7a8b1e4691f6
-pred = predict(mach, (testX, :column_based))
+yhat = predict_mode(mach, (testX, :column_based))
 
 # ╔═╡ 9585942e-98f5-472f-92a1-3c9f23e96076
-accuracy(testY, mode.(pred))
+accuracy(testY, yhat)
 
 # ╔═╡ Cell order:
 # ╟─6670cee1-7321-42eb-ac66-321d6a77773f
 # ╟─8eb1a757-1e2d-4320-86e2-603a209bce1c
 # ╟─58bcd936-4b9e-4eaa-810c-49334f91f3df
-# ╟─ecbdafa9-5bf2-4b26-9b0b-f0dd2a2f2d7e
+# ╠═ecbdafa9-5bf2-4b26-9b0b-f0dd2a2f2d7e
 # ╟─8cf09d70-28e5-4cec-a752-4a8016ec6520
 # ╠═00b0fe73-dfb0-44f9-a627-32a5778f16b5
 # ╟─5b5a7832-bd13-403e-9425-d31bab258473
@@ -123,6 +126,7 @@ accuracy(testY, mode.(pred))
 # ╟─83805247-d401-4796-b05b-a64c8263810c
 # ╟─b5322e9e-cb7e-4e7d-84a4-55196b0a9a50
 # ╠═cdb0f86f-6e98-462b-be76-ebdebe82da67
+# ╠═cc11fe3b-71bb-4bd7-a3e3-9706ece94764
 # ╟─50d6bf71-2ea4-4f65-9c20-b0486e1d00d9
 # ╠═20850c4b-220b-4e20-be9d-abd55035827e
 # ╟─f8059271-540b-44fc-bbb1-c2694d175a54

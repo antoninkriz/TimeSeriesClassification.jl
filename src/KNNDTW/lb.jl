@@ -27,29 +27,29 @@ function LBKeogh{T}(;
     return LBKeogh(radius, lower_envelope, upper_envelope, diff)
 end
 
-function lower_bound!(::LBNone, ::AbstractVector, ::AbstractVector; update_envelope::Bool = true)
+function lower_bound!(::LBNone, ::AbstractVector, ::AbstractVector; update::Bool = true)
     0
 end
 
-function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::AbstractVector{T}; update_envelope::Bool = true) where {T <: AbstractFloat}
+function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::AbstractVector{T}; update::Bool = true) where {T <: AbstractFloat}
     @assert length(enveloped) === length(query) "Enveloped serires and query series must be of the same length"
     @assert length(enveloped) >= lb.radius + 1 "Window raidus can not be larger than the series itself"
 
     if length(lb.lower_envelope) < length(enveloped)
         lb.lower_envelope = Vector{T}(undef, length(enveloped))
-        update_envelope = true
+        update = true
     end
     
     if length(lb.upper_envelope) < length(enveloped)
         lb.upper_envelope = Vector{T}(undef, length(enveloped))
-        update_envelope = true
+        update = true
     end
 
     if length(lb.diff) < length(enveloped)
         lb.diff = Vector{T}(undef, length(enveloped))
     end
 
-    @inbounds if update_envelope
+    @inbounds if update
         upper_deque = FastDequeue{Tuple{T, Int64}}(2 * lb.radius + 1)
         lower_deque = FastDequeue{Tuple{T, Int64}}(2 * lb.radius + 1)
 

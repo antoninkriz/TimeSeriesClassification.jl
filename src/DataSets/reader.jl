@@ -1,6 +1,6 @@
 module _Reader
 
-export read_ts_file
+export read_ts_file, read_ts_file_metadata
 
 macro read_assert(ex::Union{Symbol, Expr, Bool}, msg::Union{Expr, AbstractString})
     return :($(esc(ex)) ? $(nothing) : throw(AssertionError(string("TS file - ", $msg))))
@@ -80,7 +80,7 @@ function parse(
     spl = split(line, ':')
     @read_assert length(spl) == 2 "Invalid data on line $line_number: incorrect number of dimensions"
 
-    return [
+    return [[
         begin
             if s === missing_symbol
                 replace_missing_by
@@ -91,7 +91,7 @@ function parse(
             end
         end
         for s in split(spl[1], ',')
-    ], spl[2]
+    ]], spl[2]
 end
 
 function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
@@ -101,9 +101,8 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
     :has_timestamps,
     :has_missing,
     :is_classification,
-    :has_classlabel,
     :class_labels
-), Tuple{String, Int64, Int64, Bool, Bool, Bool, Bool, Bool, Bool, Set{String}}}, Base.EachLine{IOStream}, Int64}
+), Tuple{String, Int64, Int64, Bool, Bool, Bool, Set{String}}}, Base.EachLine{IOStream}, Int64}
     # Parsing info
     started_metadata::Bool = false
 
@@ -205,8 +204,7 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
         series_length=series_length,
         has_timestamps=has_timestamps,
         has_missing=has_missing,
-        is_classification=is_classification,
-        has_classlabel=has_classlabel,
+        is_classification=has_classlabel,
         class_labels=class_labels,
     ), iterator, ln
 end
@@ -224,7 +222,6 @@ function read_ts_file(
         has_timestamps,
         _,
         is_classification,
-        _,
         _,
     ), iterator, ln = read_ts_file_metadata(path)
 

@@ -2,7 +2,7 @@ module _Loader
 
 using LoopVectorization: @turbo
 
-using .._Reader: read_ts_file
+using .._Reader: read_ts_file, read_ts_file_metadata
 
 export load_dataset, load_dataset_metadata, dataset_flatten_to_matrix, DEFAULT_DIR, AbstractLoader
 
@@ -32,10 +32,9 @@ function load_dataset_metadata(
     :has_timestamps,
     :has_missing,
     :is_classification,
-    :has_classlabel,
     :class_labels
-), Tuple{String, Int64, Int64, Bool, Bool, Bool, Bool, Bool, Bool, Set{String}}}
-    metadata, _, _ = read_ts_file_metadata(path, T, replace_missing_by, missing_symbol)
+), Tuple{String, Int64, Int64, Bool, Bool, Bool, Set{String}}}
+    metadata, _, _ = read_ts_file_metadata(path)
     return metadata
 end
 
