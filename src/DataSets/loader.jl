@@ -16,7 +16,7 @@ end
 
 function load_dataset(
     path::AbstractString,
-    ::Type{T} = Float64,
+    ::Type{T} = Float64;
     replace_missing_by::T = NaN64,
     missing_symbol::AbstractString = "?",
 )::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}

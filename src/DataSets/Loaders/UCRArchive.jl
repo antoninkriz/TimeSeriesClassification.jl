@@ -237,15 +237,18 @@ _Loader.list_available_datasets(::Type{UCRArchive})::AbstractVector{Symbol} = AV
 function _Loader.load_dataset(
     ::Type{UCRArchive},
     name::Symbol,
+    ::Type{T} = Float64;
     dataset_path::Union{Nothing, AbstractString} = nothing,
-    tmp_path::Union{Nothing, AbstractString} = nothing;
+    tmp_path::Union{Nothing, AbstractString} = nothing,
+    replace_missing_by::T = NaN64,
+    missing_symbol::AbstractString = "?",
     force::Bool = false,
-)
+) where {T <: AbstractFloat}
     dataset_full_path = download_datasets(dataset_path, tmp_path, force)
 
     @info "Reading datasets..."
-    trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"))
-    testX, testY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TEST.ts"))
+    trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"), T, replace_missing_by, missing_symbol)
+    testX, testY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TEST.ts"), T, replace_missing_by, missing_symbol)
     return trainX, trainY, testX, testY
 end
 
