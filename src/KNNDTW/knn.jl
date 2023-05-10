@@ -36,7 +36,7 @@ function MLJModelInterface.reformat(::KNNDTWModel, (X, type)::Tuple{<:AbstractMa
 end
 
 MLJModelInterface.reformat(::KNNDTWModel, X::AbstractVector{<:AbstractVector{<:AbstractFloat}}, y) = (X, MLJModelInterface.categorical(y))
-MLJModelInterface.reformat(m::KNNDTWModel, (X, type), y) = (MLJModelInterface.reformat(m, (X, type))..., MLJModelInterface.categorical(y))
+MLJModelInterface.reformat(m::KNNDTWModel, (X, type)::Tuple{<:AbstractMatrix{<:AbstractFloat}, Symbol}, y) = (MLJModelInterface.reformat(m, (X, type))..., MLJModelInterface.categorical(y))
 
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xvec) = (view(Xvec, I),)
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xvec, y) = (view(Xvec, I), view(y, I))
