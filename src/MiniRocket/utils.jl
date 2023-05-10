@@ -35,7 +35,7 @@ function sorted_unique_counts(arr::Vector{T})::Tuple{Vector{T}, Vector{Int64}} w
     return unq, cnt
 end
 
-@inline logspace(start::Real, stop::Real, n::Real; base::Real = 10) = @turbo @fastmath base .^ range(start, stop, n)
+@inline logspace(start::T1, stop::T2, n::T3; base::T4 = 10) where {T1 <: Real, T2 <: Real, T3 <: Real, T4 <: Real} = @turbo base .^ range(start, stop, n)
 
 # This is terrinle hack that makes the code look much nicer unless you look bellow the hood to make the ChunkSplitters.chunks work well with ranges as well 
 struct RangeAsArray <: AbstractArray{Nothing, 0}

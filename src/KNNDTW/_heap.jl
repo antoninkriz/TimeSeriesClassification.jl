@@ -20,7 +20,7 @@ Base.empty!(heap::FastHeap{T, Tpayload}) where {T, Tpayload} = begin
     return
 end
 
-Base.first(heap::FastHeap{T, Tpayload}) where {T, Tpayload} = begin
+@inbounds Base.first(heap::FastHeap{T, Tpayload}) where {T, Tpayload} = begin
     @assert heap.n > 0 "Heap is empty"
     return heap.data[1]
 end
@@ -31,7 +31,7 @@ Base.length(heap::FastHeap{T, Tpayload}) where {T, Tpayload} = heap.n
 @inline left(i) = 2 * i
 @inline right(i) = 2 * i + 1
 
-function Base.push!(heap::FastHeap{T, Tpayload}, value::Tuple{T, Tpayload}) where {T, Tpayload}
+@inbounds function Base.push!(heap::FastHeap{T, Tpayload}, value::Tuple{T, Tpayload}) where {T, Tpayload}
     if heap.n == length(heap.data)
         return
     end
@@ -46,7 +46,7 @@ function Base.push!(heap::FastHeap{T, Tpayload}, value::Tuple{T, Tpayload}) wher
     end
 end
 
-function Base.pushfirst!(heap::FastHeap{T, Tpayload}, value::Tuple{T, Tpayload}) where {T, Tpayload}
+@inbounds function Base.pushfirst!(heap::FastHeap{T, Tpayload}, value::Tuple{T, Tpayload}) where {T, Tpayload}
     heap.data[1] = value
 
     i = 1
@@ -75,7 +75,7 @@ function Base.pushfirst!(heap::FastHeap{T, Tpayload}, value::Tuple{T, Tpayload})
     end
 end
 
-function Base.pop!(heap::FastHeap{T, Tpayload}) where {T, Tpayload}
+@inbounds function Base.pop!(heap::FastHeap{T, Tpayload}) where {T, Tpayload}
     if length(heap) == 0
         return
     elseif length(heap) == 1

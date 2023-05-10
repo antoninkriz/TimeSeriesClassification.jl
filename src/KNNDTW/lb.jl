@@ -49,19 +49,18 @@ function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::Abstr
         lb.diff = Vector{T}(undef, length(enveloped))
     end
 
-    # TODO: Indexed
-    if update_envelope
+    @inbounds if update_envelope
         upper_deque = FastDequeue{Tuple{T, Int64}}(2 * lb.radius + 1)
         lower_deque = FastDequeue{Tuple{T, Int64}}(2 * lb.radius + 1)
 
         # Init first elements
-        @inbounds for i in 1:lb.radius + 1
+        for i in 1:lb.radius + 1
             push!(upper_deque, (enveloped[i], i))
             push!(lower_deque, (enveloped[i], i))
         end
 
         # Move min+max window over the series
-        @inbounds for i in 1:length(enveloped) - lb.radius
+        for i in 1:length(enveloped) - lb.radius
             if !isempty(upper_deque) && first(upper_deque)[2] <= i - lb.radius
                 popfirst!(upper_deque)
             end
@@ -86,7 +85,7 @@ function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::Abstr
         end
 
         # Fill rest
-        @inbounds for i in (length(enveloped) - lb.radius):length(enveloped)
+        for i in (length(enveloped) - lb.radius):length(enveloped)
             lb.upper_envelope[i] = first(upper_deque)[1]
             lb.lower_envelope[i] = first(lower_deque)[1]
         end

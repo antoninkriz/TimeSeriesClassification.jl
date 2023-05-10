@@ -105,7 +105,7 @@ function MLJModelInterface.predict(
     probas = zeros(T, length(classes), length(Xnew))
     
     @conditional_threads parallel_on_Xnew for (rangeXnew, chunk_id_xnew) in chunks(Xnew, parallel_on_Xnew ? n_chunks : 1, :batch)
-        for q in rangeXnew
+        @inbounds for q in rangeXnew
             @conditional_threads !parallel_on_Xnew for (rangeX, chunk_id_x) in chunks(X, parallel_on_Xnew ? 1 : n_chunks, :batch)
                 chunk_id = parallel_on_Xnew ? chunk_id_xnew : chunk_id_x
 

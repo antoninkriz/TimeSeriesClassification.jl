@@ -17,10 +17,10 @@ function Base.push!(deque::FastDequeue{T}, data::T) where T
     elseif (deque.front == -1)
         deque.front = 0
         deque.rear = 0
-        deque.queue[deque.rear + 1] = data
+        @inbounds deque.queue[deque.rear + 1] = data
     else
         deque.rear = (deque.rear + 1) % deque.size
-        deque.queue[deque.rear + 1] = data
+        @inbounds deque.queue[deque.rear + 1] = data
     end
 end
 
@@ -28,11 +28,9 @@ function Base.popfirst!(deque::FastDequeue{T}) where T
     if deque.front != -1
         return
     elseif (deque.front == deque.rear)
-        temp = deque.queue[deque.front + 1]
         deque.front = -1
         deque.rear = -1
     else
-        temp = deque.queue[deque.front + 1]
         deque.front = (deque.front + 1) % deque.size
     end
 end
@@ -41,11 +39,9 @@ function Base.pop!(deque::FastDequeue{T}) where T
     if deque.front == -1
         return
     elseif deque.front == deque.rear
-        temp = deque.queue[deque.rear + 1]
         deque.front = -1
         deque.rear = -1
     else
-        temp = deque.queue[deque.rear + 1]
         deque.rear = (deque.rear - 1 + deque.size) % deque.size
     end
 end
@@ -55,8 +51,8 @@ function Base.empty!(deque::FastDequeue{T}) where T
     deque.rear = -1
 end
 
-Base.first(deque::FastDequeue{T}) where T = deque.queue[deque.front + 1]
-Base.last(deque::FastDequeue{T}) where T = deque.queue[deque.rear + 1]
+Base.first(deque::FastDequeue{T}) where T = @inbounds deque.queue[deque.front + 1]
+Base.last(deque::FastDequeue{T}) where T = @inbounds deque.queue[deque.rear + 1]
 Base.isempty(deque::FastDequeue{T}) where T = deque.front == -1
 Base.length(deque::FastDequeue{T}) where T =  if (deque.front == -1)
     0
