@@ -247,8 +247,8 @@ function _Loader.load_dataset(
     dataset_full_path = download_datasets(dataset_path, tmp_path, force)
 
     @info "Reading datasets..."
-    trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"), T, replace_missing_by, missing_symbol)
-    testX, testY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TEST.ts"), T, replace_missing_by, missing_symbol)
+    trainX, trainY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TRAIN.ts"), T, replace_missing_by=replace_missing_by, missing_symbol=missing_symbol)
+    testX, testY = load_dataset(joinpath(dataset_full_path, string(name), "$(name)_TEST.ts"), T, replace_missing_by=replace_missing_by, missing_symbol=missing_symbol)
     return trainX, trainY, testX, testY
 end
 
