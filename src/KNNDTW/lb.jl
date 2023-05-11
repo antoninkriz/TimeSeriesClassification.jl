@@ -11,6 +11,7 @@ abstract type LBType end
 
 mutable struct LBNone <: LBType end
 
+"Structure implementing the LB_Keogh lower bounding method"
 mutable struct LBKeogh{T} <: LBType where {T <: AbstractFloat}
     radius::Int64
     lower_envelope::Vector{T}
@@ -18,6 +19,7 @@ mutable struct LBKeogh{T} <: LBType where {T <: AbstractFloat}
     diff::Vector{T}
 end
 
+"Constructor for the structure implementing the LB_Keogh lower bound method."
 function LBKeogh{T}(;
     radius::Int64,
     lower_envelope::Vector{T} = T[],
@@ -28,10 +30,16 @@ function LBKeogh{T}(;
     return LBKeogh(radius, lower_envelope, upper_envelope, diff)
 end
 
+"Lower bound method that always returns zero."
 function lower_bound!(::LBNone, ::Tarr, ::Tarr; update::Bool = true)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     zero(T)
 end
 
+"
+Function implementing the lower bound LB_Keogh method.
+
+Set update=true to update the envelope forcefully.
+"
 function lower_bound!(lb::LBKeogh{T}, enveloped::Tarr, query::Tarr; update::Bool = true)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     @assert length(enveloped) === length(query) "Enveloped serires and query series must be of the same length"
     @assert length(enveloped) >= lb.radius + 1 "Window raidus can not be larger than the series itself"

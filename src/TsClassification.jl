@@ -47,15 +47,31 @@ $(MLJModelInterface.doc_header(MiniRocketModel))
 ### MiniRocketModel
 
 A model type for constructing MiniRocket transformer.
+
+Crate an instance with default hyperparameters using `model = MiniRocket()` or choose your override them with your own.
+
+### Hyperparameters
+
+`num_features` = total number of transformed features
+`max_dilations_per_kernel` = maximum number of dilations per kernel, this value is intended to be kept at it's default value
+`rng` = random number generator instance
+`shuffled` = is the passed in training dataset already shuffled?
 """
 MiniRocketModel
 
 """
 $(MLJModelInterface.doc_header(KNNDTWModel))
 
-### KNNDTWModel
-
 A model type for constructing KNN with DTW distances and search space limitation and lower bounds.
+
+Crate an instance with default hyperparameters using `model = KNNDTWModel()` or choose your override them with your own.
+
+### Hyperparameters
+
+`K` = number of neighbors
+`weights` = `:uniform` or `:distance` weights of the neighbors
+`distance` = DTW distance struct, for example `DTWSakoeChiba` or pure `DTW`
+`bounding` = if you want to use distnace lower bounding methods like `LB_Keogh`
 """
 KNNDTWModel
 

@@ -241,6 +241,7 @@ function transform(
     return features
 end
 
+"Structure defining the MiniRocket transformer."
 MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface.Unsupervised
     num_features::Unsigned = Unsigned(10_000)::(84 <= _)
     max_dilations_per_kernel::Unsigned = Unsigned(32)::(0 < _)
@@ -255,6 +256,7 @@ function MLJModelInterface.reformat(::MiniRocketModel, (X, type))
 end
 MLJModelInterface.selectrows(::MiniRocketModel, I, Xmatrix) = (view(Xmatrix, :, I),)
 
+"Function to train MiniRocket transformer."
 function MLJModelInterface.fit(
     model::MiniRocketModel,
     ::Any,
@@ -273,6 +275,7 @@ function MLJModelInterface.fit(
     ), nothing, nothing
 end
 
+"Function to transform a datased using trained values of the MiniRocket transformer."
 function MLJModelInterface.transform(
     model::MiniRocketModel,
     fitresult::Tuple{Vector{Int64}, Vector{Int64}, Vector{T}},
@@ -286,6 +289,7 @@ function MLJModelInterface.transform(
     )
 end
 
+"Loads fit paramters of the MiniRocket transformer."
 function MLJModelInterface.fitted_params(::MiniRocketModel, fitresult)
     return (dilations=fitresult[1], num_features_per_dilation=fitresult[2], biases=fitresult[3])
 end

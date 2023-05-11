@@ -10,10 +10,17 @@ const DEFAULT_DIR = ".julia_ts_classification"
 
 abstract type AbstractLoader end
 
+"Function to list all available dataset by the loader."
 function list_available_datasets(::AbstractLoader)::Vector{Symbol}
     @assert false "Specify a dataset Loader type to list it's available datasets"
 end
 
+"
+Function to load a dataset in the TS file format form a file.
+
+Read file from an absolute `path`. The values will be of the type `T`.
+Missing values, defined by `missing_symbol` will be replaced by `replace_missing_by`.
+"
 function load_dataset(
     path::AbstractString,
     ::Type{T} = Float64;
@@ -23,6 +30,11 @@ function load_dataset(
     read_ts_file(path, T, replace_missing_by, missing_symbol)
 end
 
+"
+Function to load only metadata form a TS file.
+
+Read TS metadata from a file located in follwoing absolute `path`.
+"
 function load_dataset_metadata(
     path::AbstractString,
 )::NamedTuple{(

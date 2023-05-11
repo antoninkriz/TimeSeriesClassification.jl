@@ -232,8 +232,20 @@ end
 
 abstract type UCRArchive <: AbstractLoader end
 
+"Function to list all available dataset in the UCR archive."
 _Loader.list_available_datasets(::Type{UCRArchive})::AbstractVector{Symbol} = AVAILABLE_DATASETS
 
+"""
+Function to load specific dataset by it's `name` from the UCR archive.
+
+The archive (~500 MB) will be downloaded if necessary to `tmp_path` and extracted to `dataset_path`.
+When not set these parameters default to a system provided temporary folder and `~/.julia_ts_classification` directory.
+Then this function will read the data and the values will be of the type `T`.
+Missing values, defined by `missing_symbol` will be replaced by `replace_missing_by`.
+
+Setting `force` to `true` will forcefully re-donwload the archive and delte all content in provided folders.
+You've been warned.
+"""
 function _Loader.load_dataset(
     ::Type{UCRArchive},
     name::Symbol,
@@ -252,6 +264,16 @@ function _Loader.load_dataset(
     return trainX, trainY, testX, testY
 end
 
+"
+Function to load only metadata form a TS file.
+
+Read TS metadata from a dataset called `name` from the UCR archive.
+The archive (~500 MB) will be downloaded if necessary to `tmp_path` and extracted to `dataset_path`.
+When not set these parameters default to a system provided temporary folder and `~/.julia_ts_classification` directory.
+
+Setting `force` to `true` will forcefully re-donwload the archive and delte all content in provided folders.
+You've been warned.
+"
 function _Loader.load_dataset_metadata(
     ::Type{UCRArchive},
     name::Symbol,

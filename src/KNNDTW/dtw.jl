@@ -12,29 +12,44 @@ export DTWType,
 
 abstract type DTWType end
 
+"Structure implementing vanilla DTW."
 mutable struct DTW{T <: AbstractFloat} <: DTWType
     matrix::Matrix{T}
 end
 
+"Constructor to instantiate vanilla DTW structure."
 DTW{T}() where {T <: AbstractFloat} =
     DTW{T}(T[;;])
 
+"Structure implementing DTW with Sakoe-Chiba band."
 mutable struct DTWSakoeChiba{T <: AbstractFloat} <: DTWType
     matrix::Matrix{T}
     radius::Int64
     match_sizes::Bool
 end
 
+"
+Constructor to instantiate Sakoe-Chiba DTW structure.
+
+`radius` sets the radius of the band.
+`match_sizes` allow the radius to extend in the direction of the opposing corner when the matrices aren't equally sized.
+"
 DTWSakoeChiba{T}(;
     radius::Int64 = 0,
     match_sizes::Bool = false
 ) where {T <: AbstractFloat} = DTWSakoeChiba{T}(T[;;], radius, match_sizes)
 
+"Structure implementing DTW with Itakura parallelogram."
 mutable struct DTWItakura{T <: AbstractFloat} <: DTWType
     matrix::Matrix{T}
     slope::Float64
 end
 
+"
+Constructor to instantiate Itakura DTW structure.
+
+`slope` sets the slope of the parallelogram.
+"
 function DTWItakura{T}(;
     slope::Float64 = 1.0,
 ) where {T <: AbstractFloat}
@@ -43,7 +58,7 @@ function DTWItakura{T}(;
     DTWItakura{T}(T[;;], slope)
 end
 
-
+"Function to calucate vanilla DTW distance between `x` and `y`."
 @inbounds function dtw!(model::DTW{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     row_count, col_count = length(x), length(y)
 
@@ -79,6 +94,7 @@ end
     @inbounds return model.matrix[row_count, col_count]
 end
 
+"Function to calucate Sakoe-Chiba band limited DTW distance between `x` and `y`."
 function dtw!(model::DTWSakoeChiba{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     row_count, col_count = length(x), length(y)
 
@@ -117,6 +133,7 @@ function dtw!(model::DTWSakoeChiba{T}, x::Tarr, y::Tarr)::T where {T <: Abstract
     @inbounds return model.matrix[row_count, col_count]
 end
 
+"Function to calucate Itakura parallelogram limited DTW distance between `x` and `y`."
 function dtw!(model::DTWItakura{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     row_count, col_count = length(x), length(y)
 
