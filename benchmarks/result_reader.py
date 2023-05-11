@@ -26,8 +26,8 @@ for line in fileinput.input():
 
     current_data.append(float(line.split()[0]))
 
-print('name, filter_datasets, load_data, create_model, fit, train, accuracy')
+print('name,filter_datasets,load_data,create_model,fit,train,accuracy')
 for name, v in sorted(list(resutls.items()), key=lambda x: x[0]):
     # d = train, e = test, x = accuracy
     a, b, c, d, e, x = v
-    print(f'{name}, {a}, {b}, {c}, {d}, {e}, {x}')
+    print(f'{name},{a},{b},{c},{d},{e},{x}')
