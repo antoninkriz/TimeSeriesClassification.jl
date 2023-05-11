@@ -163,7 +163,7 @@ function transform(
     A_threads = zeros(T, input_length, n_chunks)
     G_threads = zeros(T, input_length, n_chunks)
 
-    chunks = (((round(Int64, i * (num_examples / n_chunks)))+1:round(Int64,(i+1)*(num_examples / n_chunks)), i+1) for i in 0:n_chunks-1)
+    chunks = collect(((round(Int64, i * (num_examples / n_chunks)))+1:round(Int64,(i+1)*(num_examples / n_chunks)), i+1) for i in 0:n_chunks-1)
     @fastmath @inbounds Threads.@threads for (xrange, chunk_id) in chunks
         for example_index in xrange
             _X = @views X[:, example_index]

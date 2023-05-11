@@ -3,7 +3,6 @@ module _KNN
 import MLJModelInterface
 using CategoricalArrays: AbstractCategoricalArray, CatArrOrSub
 using CategoricalDistributions: mode
-using ChunkSplitters: chunks
 using VectorizedStatistics: vsum
 using Logging: @info
 using LoopVectorization: @turbo
@@ -104,8 +103,8 @@ function MLJModelInterface.predict(
     # Prepare stuff for aggregating results
     classes = MLJModelInterface.classes(y)
     probas = zeros(T, length(classes), length(Xnew))
-    chunksXnew = parallel_on_Xnew ? (((round(Int64, i * (length(Xnew) / n_chunks)))+1:round(Int64,(i+1)*(length(Xnew) / n_chunks)), i+1) for i in 0:n_chunks-1) : ((1:length(Xnew), -1),)
-    chunksX = !parallel_on_Xnew ? (((round(Int64, i * (length(X) / n_chunks)))+1:round(Int64,(i+1)*(length(X) / n_chunks)), i+1) for i in 0:n_chunks-1) : ((1:length(X), -1),)
+    chunksXnew = collect(parallel_on_Xnew ? (((round(Int64, i * (length(Xnew) / n_chunks)))+1:round(Int64,(i+1)*(length(Xnew) / n_chunks)), i+1) for i in 0:n_chunks-1) : ((1:length(Xnew), -1),))
+    chunksX = collect(!parallel_on_Xnew ? (((round(Int64, i * (length(X) / n_chunks)))+1:round(Int64,(i+1)*(length(X) / n_chunks)), i+1) for i in 0:n_chunks-1) : ((1:length(X), -1),))
 
     @inbounds @conditional_threads parallel_on_Xnew for (rangeXnew, chunk_id_xnew) in chunksXnew
         for q in rangeXnew
