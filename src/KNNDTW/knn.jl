@@ -1,7 +1,6 @@
 module _KNN
 
 import MLJModelInterface
-using Base: RefValue
 using CategoricalArrays: AbstractCategoricalArray, CatArrOrSub
 using CategoricalDistributions: mode
 using ChunkSplitters: chunks
@@ -88,13 +87,7 @@ function MLJModelInterface.predict(
     parallel_on_Xnew = length(Xnew) >= length(X)
     n_chunks = min(Threads.nthreads(), parallel_on_Xnew ? length(Xnew) : length(X))
 
-    # Init stuff for threads. All these Ref hacks are need to be done to prevent Julia from copying data in the threads.
-    refX = [RefValue{eltype(X)}(el) for el in X]
-    refrefX = RefValue{typeof(refX)}(refX)
-    refY = [RefValue{eltype(y)}(el) for el in y]
-    refrefY = RefValue{typeof(refY)}(refY)
-    refXnew = [RefValue{eltype(Xnew)}(el) for el in Xnew]
-    refrefXnew = RefValue{typeof(refXnew)}(refXnew)
+    # Init stuff for threads
     heaps = [
         FastHeap{T, eltype(y)}(model.K, :max)
         for _ in 1:n_chunks
@@ -102,43 +95,35 @@ function MLJModelInterface.predict(
     distances = [
         deepcopy(model.distance)
         for _ in 1:n_chunks
-    ]::Vector{typeof(model.distance)}
-    refDistances::Vector{RefValue{typeof(model.distance)}} = [RefValue{typeof(model.distance)}(d) for d in distances]
-    refrefDistances = RefValue{typeof(refDistances)}(refDistances)
+    ]
     boundings = [
         deepcopy(model.bounding)
         for _ in 1:n_chunks
-    ]::Vector{typeof(model.bounding)}
-    refBoundings::Vector{RefValue{typeof(model.bounding)}} = [RefValue{typeof(model.bounding)}(b) for b in boundings]
-    refrefBoundings = RefValue{typeof(refBoundings)}(refBoundings)
+    ]
 
     # Prepare stuff for aggregating results
     classes = MLJModelInterface.classes(y)
-    probas = zeros(T, length(classes), length(refrefXnew[]))
-    
-    @inbounds @conditional_threads parallel_on_Xnew for (rangeXnew, chunk_id_xnew) in chunks(refrefXnew[], parallel_on_Xnew ? n_chunks : 1, :batch)
+    probas = zeros(T, length(classes), length(Xnew))
+    chunksXnew = parallel_on_Xnew ? (((round(Int64, i * (length(Xnew) / n_chunks)))+1:round(Int64,(i+1)*(length(Xnew) / n_chunks)), i+1) for i in 0:n_chunks-1) : ((1:length(Xnew), -1),)
+    chunksX = !parallel_on_Xnew ? (((round(Int64, i * (length(X) / n_chunks)))+1:round(Int64,(i+1)*(length(X) / n_chunks)), i+1) for i in 0:n_chunks-1) : ((1:length(X), -1),)
+
+    @inbounds @conditional_threads parallel_on_Xnew for (rangeXnew, chunk_id_xnew) in chunksXnew
         for q in rangeXnew
-            @conditional_threads !parallel_on_Xnew for (rangeX, chunk_id_x) in chunks(refrefX[], parallel_on_Xnew ? 1 : n_chunks, :batch)
+            @conditional_threads !parallel_on_Xnew for (rangeX, chunk_id_x) in chunksX
                 chunk_id = parallel_on_Xnew ? chunk_id_xnew : chunk_id_x
                 heap = heaps[chunk_id]
-                distance = (refrefDistances[]::Vector{RefValue{typeof(model.distance)}})[chunk_id]::RefValue{typeof(model.distance)}
-                bounding = (refrefBoundings[]::Vector{RefValue{typeof(model.bounding)}})[chunk_id]::RefValue{typeof(model.bounding)}
-                _xn = (refrefXnew[]::Vector{RefValue{eltype(Xnew)}})[q]::RefValue{eltype(Xnew)}
 
                 for i in rangeX
-                    _x = (refrefX[]::Vector{RefValue{eltype(X)}})[i]::RefValue{eltype(X)}
-                    _y = (refrefY[]::Vector{RefValue{eltype(y)}})[i]::RefValue{eltype(y)}
-
-                    if !isempty(heap) && lower_bound!(bounding[], _xn[], _x[], update=i == 1) > first(heap)[1]::T
+                    if !isempty(heap) && lower_bound!(boundings[chunk_id], Xnew[q], X[i], update=i == 1) > first(heap)[1]
                         continue
                     end
 
-                    dtw_distance = dtw!(distance[]::typeof(model.distance), _xn[], _x[])::T
+                    dtw_distance = dtw!(distances[chunk_id], Xnew[q], X[i])
 
                     if length(heap) < model.K
-                        push!(heap, (dtw_distance, _y[]::eltype(y)))
-                    elseif dtw_distance < first(heap)[1]::T
-                        pushfirst!(heap, (dtw_distance, _y[]::eltype(y)))
+                        push!(heap, (dtw_distance, y[i]))
+                    elseif dtw_distance < first(heap)[1]
+                        pushfirst!(heap, (dtw_distance, y[i]))
                     end
                 end
             end

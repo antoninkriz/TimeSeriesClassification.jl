@@ -5,7 +5,6 @@ using StaticArrays: SMatrix
 using Statistics: quantile, quantile!
 using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
-using ChunkSplitters: chunks
 import MLJModelInterface
 
 using .._Utils: sorted_unique_counts, logspace, RangeAsArray
@@ -49,8 +48,8 @@ function fit_biases(
 
             _X = @views X[:, shuffled ? (((kernel_index + ((dilation_index - 1) * NUM_KERNELS) - 1) % num_examples) + 1) : (abs(rand(rng, Int64) % num_examples) + 1)]
 
-            @turbo @. A = _X * -1
-            @turbo @. G = _X * 3
+            @turbo @. A .= _X .* T(-1)
+            @turbo @. G .= _X .* T(3)
 
             copyto!(C, A)
 
@@ -153,31 +152,32 @@ function transform(
     num_features_per_dilation::Vector{Int64},
     biases::Vector{T},
 )::Matrix{T} where {T <: AbstractFloat}
-    n_chunks = Threads.nthreads()
     input_length, num_examples = size(X)
+    n_chunks = min(Threads.nthreads(), num_examples)
 
     features = zeros(T, (NUM_KERNELS * vsum(num_features_per_dilation), num_examples))
 
-    # Small allocations might be faster than this thing. This needs testing.
-    C_alpha_theads = zeros(T, input_length, n_chunks)
-    C_theads = zeros(T, input_length, n_chunks)
+    # Small allocations might be faster than this thing. This needs tes`ting.
+    C_alpha_threads = zeros(T, input_length, n_chunks)
+    C_threads = zeros(T, input_length, n_chunks)
     A_threads = zeros(T, input_length, n_chunks)
     G_threads = zeros(T, input_length, n_chunks)
 
-    @fastmath @inbounds Threads.@threads for (xrange, chunk_id) in chunks(RangeAsArray(1:num_examples), n_chunks, :batch)
+    chunks = (((round(Int64, i * (num_examples / n_chunks)))+1:round(Int64,(i+1)*(num_examples / n_chunks)), i+1) for i in 0:n_chunks-1)
+    @fastmath @inbounds Threads.@threads for (xrange, chunk_id) in chunks
         for example_index in xrange
             _X = @views X[:, example_index]
 
-            C_alpha = @views C_alpha_theads[:, chunk_id]
-            C = @views C_theads[:, chunk_id]
+            C_alpha = @views C_alpha_threads[:, chunk_id]
+            C = @views C_threads[:, chunk_id]
             A = @views A_threads[:, chunk_id]
             G = @views G_threads[:, chunk_id]
 
             fill!(C_alpha, zero(T))
             fill!(C, zero(T))
 
-            @turbo @. A = _X * T(-1)
-            @turbo @. G = _X * T(3)
+            @turbo @. A .= _X .* T(-1)
+            @turbo @. G .= _X .* T(3)
 
             feature_index_start = 0
 
