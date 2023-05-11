@@ -6,8 +6,8 @@ from sktime.transformations.panel.rocket import MiniRocket
 # Precompilation
 def pre():
     dir_path = os.path.expanduser('~/.sktime_ucr')
-    trainX, _ = load_UCR_UEA_dataset(dataset, split='train', return_X_y=True, return_type='numpy3D', extract_path=dir_path)
-    mini = MiniRocket()
+    trainX, _ = load_UCR_UEA_dataset('Chinatown', split='train', return_X_y=True, return_type='numpy3D', extract_path=dir_path)
+    mini = MiniRocket(n_jobs=-1)
     mini.fit(trainX)
     mini.transform(trainX)
 pre()
@@ -32,7 +32,7 @@ for dataset in datasets:
     t = time(t)
 
     # Create model
-    mini = MiniRocket()
+    mini = MiniRocket(n_jobs=-1)
     t = time(t)
 
     # Fit model

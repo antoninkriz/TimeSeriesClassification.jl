@@ -1,3 +1,4 @@
 .idea
 Manifest.toml
 .CondaPkg
+__pycache__
