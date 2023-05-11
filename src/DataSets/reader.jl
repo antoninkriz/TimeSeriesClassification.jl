@@ -1,5 +1,7 @@
 module _Reader
 
+using Base: parse, tryparse
+
 export read_ts_file, read_ts_file_metadata
 
 macro read_assert(ex::Union{Symbol, Expr, Bool}, msg::Union{Expr, AbstractString})
@@ -63,7 +65,7 @@ macro metadata_parse_int(
     end)
 end
 
-function parse(
+function parse_ts_row(
     ::Type{T},
     replace_missing_by::T,
     missing_symbol::AbstractString,
@@ -102,7 +104,7 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
     :has_missing,
     :is_classification,
     :class_labels
-), Tuple{String, Int64, Int64, Bool, Bool, Bool, Set{String}}}, Base.EachLine{IOStream}, Int64}
+), Tuple{String, Int64, Int64, Bool, Bool, Bool, Union{Set{String}, Set{Int64}}}}, Base.EachLine{IOStream}, Int64}
     # Parsing info
     started_metadata::Bool = false
 
@@ -116,7 +118,7 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
     is_equallength::Bool = false
     has_target_label::Bool = false
     has_classlabel::Bool = false
-    class_labels::Set{String} = Set{String}()
+    class_labels::Union{Set{String}, Set{Int64}} = Set{String}()
 
     # Tags present
     tag_problemname::Bool = false
@@ -187,7 +189,7 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
             @read_assert started_metadata "Metadata must come before data"
             @read_assert tag_problemname && tag_timestamps && tag_missing && tag_univariate && tag_equallength "Incomplete metadata"
             @read_assert xor(has_target_label, has_classlabel) "Tags @targetlabel forbids tag @classlabel and vice versa"
-            @read_assert is_equallength && series_length != 0 "Tag @equallength requires non-zero @serieslength and vice versa"
+            @read_assert !is_equallength || (is_equallength && series_length != 0) "Tag @equallength requires non-zero @serieslength and vice versa"
             @read_assert xor(is_univariate, tag_dimension) "@univariate being true forbids setting tag @dimension and vice versa"
         
             tag_data = true
@@ -205,7 +207,11 @@ function read_ts_file_metadata(path::AbstractString)::Tuple{NamedTuple{(
         has_timestamps=has_timestamps,
         has_missing=has_missing,
         is_classification=has_classlabel,
-        class_labels=class_labels,
+        class_labels=(
+            any(y -> tryparse(Int64, y) === nothing, class_labels)
+            ? class_labels
+            : Set{Int64}(parse(Int64, y) for y in class_labels)
+        ),
     ), iterator, ln
 end
 
@@ -214,7 +220,7 @@ function read_ts_file(
     ::Type{T} = Float64,
     replace_missing_by::T = NaN64,
     missing_symbol::AbstractString = "?",
-)::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
+)::Tuple{Vector{Vector{Vector{T}}}, Union{Vector{String}, Vector{Int64}}} where {T}
     (
         _,
         dimension,
@@ -226,7 +232,7 @@ function read_ts_file(
     ), iterator, ln = read_ts_file_metadata(path)
 
     outX::Vector{Vector{Vector{T}}} = []
-    outY::Vector{String} = []
+    outY_string::Vector{String} = []
 
     for (line_number, line) in enumerate(iterator)
         line = lowercase(strip(line))
@@ -236,7 +242,7 @@ function read_ts_file(
             continue
         end
 
-        x, y = parse(
+        x, y = parse_ts_row(
             T,
             replace_missing_by,
             missing_symbol,
@@ -247,10 +253,14 @@ function read_ts_file(
             is_classification,
         )
         push!(outX, x)
-        push!(outY, y)
+        push!(outY_string, y)
     end
 
-    return outX, outY
+    return if any(y -> tryparse(Int64, y) === nothing, outY_string)
+        outX, outY
+    else
+        outX, parse.(Int64, outY_string)
+    end
 end
 
 end

@@ -19,7 +19,7 @@ function load_dataset(
     ::Type{T} = Float64;
     replace_missing_by::T = T(NaN),
     missing_symbol::AbstractString = "?",
-)::Tuple{Vector{Vector{Vector{T}}}, Vector{String}} where {T}
+)::Tuple{Vector{Vector{Vector{T}}}, Union{Vector{String}, Vector{Int64}}} where {T}
     read_ts_file(path, T, replace_missing_by, missing_symbol)
 end
 
@@ -33,7 +33,7 @@ function load_dataset_metadata(
     :has_missing,
     :is_classification,
     :class_labels
-), Tuple{String, Int64, Int64, Bool, Bool, Bool, Set{String}}}
+), Tuple{String, Int64, Int64, Bool, Bool, Bool, Union{Set{String}, Set{Int64}}}}
     metadata, _, _ = read_ts_file_metadata(path)
     return metadata
 end

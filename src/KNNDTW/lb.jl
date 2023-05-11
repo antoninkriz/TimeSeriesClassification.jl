@@ -1,5 +1,6 @@
 module _LB
 
+using Base: RefValue
 using LoopVectorization: @turbo
 using VectorizedStatistics: vsum
 using .._Utils: FastDequeue
@@ -27,11 +28,11 @@ function LBKeogh{T}(;
     return LBKeogh(radius, lower_envelope, upper_envelope, diff)
 end
 
-function lower_bound!(::LBNone, ::AbstractVector, ::AbstractVector; update::Bool = true)
-    0
+function lower_bound!(::LBNone, ::Tarr, ::Tarr; update::Bool = true)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+    zero(T)
 end
 
-function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::AbstractVector{T}; update::Bool = true) where {T <: AbstractFloat}
+function lower_bound!(lb::LBKeogh{T}, enveloped::Tarr, query::Tarr; update::Bool = true)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     @assert length(enveloped) === length(query) "Enveloped serires and query series must be of the same length"
     @assert length(enveloped) >= lb.radius + 1 "Window raidus can not be larger than the series itself"
 

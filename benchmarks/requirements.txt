@@ -1,0 +1,2 @@
+sktime==18.0.0
+scikit-learn==1.2.1
