@@ -59,7 +59,7 @@ function DTWItakura{T}(;
 end
 
 "Function to calucate vanilla DTW distance between `x` and `y`."
-@inbounds function dtw!(model::DTW{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+function dtw!(model::DTW{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows
