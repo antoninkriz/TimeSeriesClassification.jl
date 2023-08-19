@@ -43,7 +43,7 @@ jobs:
       - name: Process code coverage
         uses: julia-actions/julia-processcoverage@v1
         with:
-          directories: src
+          directories: src/KNNDTW,src/MiniRocket
       - name: Upload code coverage
         uses: codecov/codecov-action@v3
         env:

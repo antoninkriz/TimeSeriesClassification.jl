@@ -7,7 +7,7 @@ using VectorizedStatistics: vsum
 using LoopVectorization: @turbo
 import MLJModelInterface
 
-using .._Utils: sorted_unique_counts, logspace, RangeAsArray
+using .._Utils: sorted_unique_counts, logspace
 
 export MiniRocketModel
 
