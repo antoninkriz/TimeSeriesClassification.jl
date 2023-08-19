@@ -95,7 +95,7 @@ end
     nn = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TS1)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y)
-    fit!(mach)
+    fit!(mach, verbosity=0)
     pred = predict(mach, (TEST_X, :column_based))
 
     @test pdf.(pred, "a") ≈ [1, 0]
