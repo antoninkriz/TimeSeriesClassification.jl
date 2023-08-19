@@ -1,5 +1,9 @@
 # TSC.jl - Time Series Classification for Julia
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/antoninkriz/TSC.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/antoninkriz/TSC.jl/actions/workflows/CI.yml)
+
+
 Fast and optimized time series classification (TSC) toolkit for Julia.
 
 
