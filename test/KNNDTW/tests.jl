@@ -1,4 +1,4 @@
-using TsClassification: KNNDTW
+using TSC: KNNDTW
 using Test: @testset, @test, @test_throws
 using CategoricalArrays: CategoricalArray, categorical
 using CategoricalDistributions: pdf

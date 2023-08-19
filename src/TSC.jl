@@ -1,4 +1,4 @@
-module TsClassification
+module TSC
 
 import MLJModelInterface
 
@@ -17,7 +17,7 @@ import .DataSets
 
 MLJModelInterface.metadata_pkg.(
     (MiniRocketModel, KNNDTWModel),
-    name = "TsClassification",
+    name = "TSC",
     uuid = "4869f98a-92d2-4a27-bbf6-5599fe134177",
     url = "https://github.com/antoninkriz/julia-ts-classification",
     julia = true,
@@ -29,14 +29,14 @@ MLJModelInterface.metadata_model(
     MiniRocketModel,
     input_scitype = Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
     output_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
-    load_path = "TsClassification.MiniRocketModel",
+    load_path = "TSC.MiniRocketModel",
 )
 
 MLJModelInterface.metadata_model(
     KNNDTWModel,
     input_scitype = AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}},
     output_scitype = AbstractMatrix{<:MLJModelInterface.Finite},
-    load_path = "TsClassification.KNNDTWModel",
+    load_path = "TSC.KNNDTWModel",
 )
 
 """

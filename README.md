@@ -1,4 +1,4 @@
-# Time Series Classification in Julia
+# TSC.jl - Time Series Classification for Julia
 
 Fast and optimized time series classification (TSC) toolkit for Julia.
 

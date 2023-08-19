@@ -1,6 +1,6 @@
 using Random: rand
 using MLJModelInterface
-using TsClassification
+using TSC
 
 pre(N, M, p) = begin
     p && print("$N,$M")

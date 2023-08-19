@@ -1,6 +1,6 @@
 using MLJ
-using TsClassification
-using TsClassification.DataSets.Loaders
+using TSC
+using TSC.DataSets.Loaders
 import Logging
 
 # Disable most logs

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.25
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -17,10 +17,10 @@ using MLJ
 using MLJScikitLearnInterface: RidgeCVClassifier
 
 # ╔═╡ 0c229a07-b0ba-4afb-a5c5-2679b43f2d91
-using TsClassification: MiniRocketModel, DataSets
+using TSC: MiniRocketModel, DataSets
 
 # ╔═╡ 3dd04ec5-4b0b-451a-b44c-982d55d5f750
-using TsClassification.DataSets.Loaders: UCRArchive
+using TSC.DataSets.Loaders: UCRArchive
 
 # ╔═╡ d8ba75a0-717b-4c33-80d2-9287449ca29e
 md"
@@ -34,7 +34,7 @@ md"
 
 # ╔═╡ 3d1ee662-382a-442c-a8d7-87e7d4d88aee
 md"
-Let's activate the TsClassification package environment first
+Let's activate the TSC package environment first
 "
 
 # ╔═╡ 02ca3013-5db3-4657-a8c6-1f553ea76c23
@@ -44,7 +44,7 @@ md"
 
 # ╔═╡ 213e0990-3e8c-4a83-ab79-d2ab54569fa9
 md"
-... and import TsClassification packages
+... and import TSC packages
 "
 
 # ╔═╡ c3005465-cf63-4b1e-a9f7-1a88965a0d60
@@ -132,7 +132,7 @@ accuracy(testY, pred)
 # ╟─d8ba75a0-717b-4c33-80d2-9287449ca29e
 # ╟─54acb425-c1db-4adb-83a8-91e90c0c9172
 # ╟─3d1ee662-382a-442c-a8d7-87e7d4d88aee
-# ╟─9de3bb8a-e9d4-11ed-20c9-35cadb6e8416
+# ╠═9de3bb8a-e9d4-11ed-20c9-35cadb6e8416
 # ╟─02ca3013-5db3-4657-a8c6-1f553ea76c23
 # ╠═8c7133f0-1b79-4317-8349-4609b9447793
 # ╠═bf3b1a57-fd8b-4858-9770-7edc239242e4

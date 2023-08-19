@@ -1,6 +1,6 @@
 using Random: rand
 using MLJModelInterface
-using TsClassification
+using TSC
 
 
 @noinline pre(m, t) = begin
