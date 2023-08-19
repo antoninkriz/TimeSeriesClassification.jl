@@ -7,7 +7,7 @@ using InteractiveUtils
 # ╔═╡ 9de3bb8a-e9d4-11ed-20c9-35cadb6e8416
 begin
 	import Pkg
-	Pkg.activate("..")
+	Pkg.activate(".")
 end
 
 # ╔═╡ 8c7133f0-1b79-4317-8349-4609b9447793

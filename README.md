@@ -22,13 +22,12 @@ Fast and optimized time series classification (TSC) toolkit for Julia.
 
 Examples created with [Pluto.jl](https://plutojl.org/) can be found in the `/examples` folder.
 
-Execute the following command and open an example notebook.
+Open the `/examples` folder, start Julia REPL, execute the following commands and open one of the example notebooks.
 
 ```jl
-import Pluto; Pluto.run()
+] activate .
+> import Pluto; Pluto.run()
 ```
-
-All tests are located in the `/tests` folder.
 
 
 ## Performance
@@ -52,6 +51,9 @@ Open Julia REPL and execute following commands to run tests.
 ] activate .
 ] test
 ```
+
+All tests are located in the `/tests` folder.
+
 
 
 ## About this package

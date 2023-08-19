@@ -1,0 +1,5 @@
+[deps]
+MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJScikitLearnInterface = "5ae90465-5518-4432-b9d2-8a1def2f0cab"
+Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
+TSC = "4869f98a-92d2-4a27-bbf6-5599fe134177"
