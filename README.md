@@ -1,4 +1,4 @@
-# TimeSeriesClassification.jl - Time Series Classification for Julia
+# TimeSeriesClassification.jl
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/antoninkriz/TimeSeriesClassification.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/antoninkriz/TimeSeriesClassification.jl/actions/workflows/CI.yml)
