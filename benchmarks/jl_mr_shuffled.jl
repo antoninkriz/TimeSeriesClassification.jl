@@ -1,6 +1,6 @@
 using Random: rand
 using MLJModelInterface
-using TSC
+using TimeSeriesClassification
 
 
 @noinline pre(m, t) = begin

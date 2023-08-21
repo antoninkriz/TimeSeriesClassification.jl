@@ -14,10 +14,10 @@ end
 using MLJ
 
 # ╔═╡ 08bc10bd-76c4-4dba-ae55-7d6831363632
-using TSC: KNNDTWModel, DTWSakoeChiba, DataSets
+using TimeSeriesClassification: KNNDTWModel, DTWSakoeChiba, DataSets
 
 # ╔═╡ 0532c6d2-5f69-45b2-a880-b5253396c4c0
-using TSC.DataSets.Loaders: UCRArchive
+using TimeSeriesClassification.DataSets.Loaders: UCRArchive
 
 # ╔═╡ 6670cee1-7321-42eb-ac66-321d6a77773f
 md"
@@ -31,7 +31,7 @@ md"
 
 # ╔═╡ 58bcd936-4b9e-4eaa-810c-49334f91f3df
 md"
-Let's activate the TSC package environment first
+Let's activate the TimeSeriesClassification package environment first
 "
 
 # ╔═╡ 8cf09d70-28e5-4cec-a752-4a8016ec6520
@@ -41,7 +41,7 @@ md"
 
 # ╔═╡ 5b5a7832-bd13-403e-9425-d31bab258473
 md"
-... and import TSC packages
+... and import TimeSeriesClassification packages
 "
 
 # ╔═╡ 83805247-d401-4796-b05b-a64c8263810c

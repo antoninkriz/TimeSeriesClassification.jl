@@ -1,6 +1,6 @@
 using MLJ
-using TSC
-using TSC.DataSets.Loaders
+using TimeSeriesClassification
+using TimeSeriesClassification.DataSets.Loaders
 import Logging
 
 # Disable most logs

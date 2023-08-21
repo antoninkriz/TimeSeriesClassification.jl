@@ -17,10 +17,10 @@ using MLJ
 using MLJScikitLearnInterface: RidgeCVClassifier
 
 # ╔═╡ 0c229a07-b0ba-4afb-a5c5-2679b43f2d91
-using TSC: MiniRocketModel, DataSets
+using TimeSeriesClassification: MiniRocketModel, DataSets
 
 # ╔═╡ 3dd04ec5-4b0b-451a-b44c-982d55d5f750
-using TSC.DataSets.Loaders: UCRArchive
+using TimeSeriesClassification.DataSets.Loaders: UCRArchive
 
 # ╔═╡ d8ba75a0-717b-4c33-80d2-9287449ca29e
 md"
@@ -34,7 +34,7 @@ md"
 
 # ╔═╡ 3d1ee662-382a-442c-a8d7-87e7d4d88aee
 md"
-Let's activate the TSC package environment first
+Let's activate the TimeSeriesClassification package environment first
 "
 
 # ╔═╡ 02ca3013-5db3-4657-a8c6-1f553ea76c23
@@ -44,7 +44,7 @@ md"
 
 # ╔═╡ 213e0990-3e8c-4a83-ab79-d2ab54569fa9
 md"
-... and import TSC packages
+... and import TimeSeriesClassification packages
 "
 
 # ╔═╡ c3005465-cf63-4b1e-a9f7-1a88965a0d60

@@ -1,4 +1,4 @@
-name = "TSC"
+name = "TimeSeriesClassification"
 uuid = "4869f98a-92d2-4a27-bbf6-5599fe134177"
 authors = ["Antonín Kříž (https://www.antoninkriz.eu)"]
 version = "1.0.0"

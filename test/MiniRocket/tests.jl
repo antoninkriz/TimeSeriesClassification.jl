@@ -1,4 +1,4 @@
-using TSC: MiniRocketModel
+using TimeSeriesClassification: MiniRocketModel
 using Test: @testset, @test
 using Random: Xoshiro
 using MLJ: machine, fit!, fitted_params, transform
