@@ -1,4 +1,4 @@
-using MLJ
+using MLJBase
 using TimeSeriesClassification
 using TimeSeriesClassification.DataSets.Loaders
 import Logging

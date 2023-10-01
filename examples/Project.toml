@@ -1,5 +1,6 @@
 [deps]
-MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
 MLJScikitLearnInterface = "5ae90465-5518-4432-b9d2-8a1def2f0cab"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
+StatisticalMeasures = "a19d573c-0a75-4610-95b3-7071388c7541"
 TimeSeriesClassification = "4869f98a-92d2-4a27-bbf6-5599fe134177"

@@ -2,7 +2,7 @@ using TimeSeriesClassification: KNNDTW
 using Test: @testset, @test, @test_throws
 using CategoricalArrays: CategoricalArray, categorical
 using CategoricalDistributions: pdf
-using MLJ: machine, fit!, fitted_params, predict, predict_mode
+using MLJBase: machine, fit!, fitted_params, predict, predict_mode
 
 
 const TS1::Vector{Float64} = [0.57173714, 0.03585991, 0.16263380, 0.63153396, 0.00599358, 0.63256182, 0.85341386, 0.87538411, 0.35243848, 0.27466851]

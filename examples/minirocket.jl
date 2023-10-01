@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.27
+# v0.19.29
 
 using Markdown
 using InteractiveUtils
@@ -11,10 +11,13 @@ begin
 end
 
 # ╔═╡ 8c7133f0-1b79-4317-8349-4609b9447793
-using MLJ
+using MLJBase
 
 # ╔═╡ bf3b1a57-fd8b-4858-9770-7edc239242e4
 using MLJScikitLearnInterface: RidgeCVClassifier
+
+# ╔═╡ 0bbd9aab-8d32-4854-af47-074f679d050c
+using StatisticalMeasures
 
 # ╔═╡ 0c229a07-b0ba-4afb-a5c5-2679b43f2d91
 using TimeSeriesClassification: MiniRocketModel, DataSets
@@ -39,7 +42,7 @@ Let's activate the TimeSeriesClassification package environment first
 
 # ╔═╡ 02ca3013-5db3-4657-a8c6-1f553ea76c23
 md"
-... and import required packages like MLJ and ScikitLearn for Ridge Regression
+... and import required packages like MLJ or MLJBase and ScikitLearn for Ridge Regression
 "
 
 # ╔═╡ 213e0990-3e8c-4a83-ab79-d2ab54569fa9
@@ -136,6 +139,7 @@ accuracy(testY, pred)
 # ╟─02ca3013-5db3-4657-a8c6-1f553ea76c23
 # ╠═8c7133f0-1b79-4317-8349-4609b9447793
 # ╠═bf3b1a57-fd8b-4858-9770-7edc239242e4
+# ╠═0bbd9aab-8d32-4854-af47-074f679d050c
 # ╟─213e0990-3e8c-4a83-ab79-d2ab54569fa9
 # ╠═0c229a07-b0ba-4afb-a5c5-2679b43f2d91
 # ╠═3dd04ec5-4b0b-451a-b44c-982d55d5f750
