@@ -48,10 +48,10 @@ A model type for constructing MiniRocket transformer based on the [MINIROCKET pa
 
 ## Hyperparameters
 
-- `num_features=10_000`:               Total number of transformed features
-- `max_dilations_per_kernel=32`:       Maximum number of dilations per kernel, this value is intended to be kept at it's default value
-- `rng=GLOBAL_RNG`:                    Random number generator instance (`::Random.AbstractRNG`)
-- `shuffled=false`:                    Is the passed in training dataset already shuffled? This might improve performance on already shuffled datasets thanks to non-random sequential access.
+- `num_features=10_000`:         Total number of transformed features
+- `max_dilations_per_kernel=32`: Maximum number of dilations per kernel, this value is intended to be kept at it's default value
+- `rng=GLOBAL_RNG`:              Random number generator instance (`::Random.AbstractRNG`)
+- `shuffled=false`:              Is the passed in training dataset already shuffled? This might improve performance on already shuffled datasets thanks to non-random sequential access.
 
 ## Interfaces
 
@@ -113,19 +113,19 @@ KNNDTWModel is for constructing k-Nearest Neigbors model with Dynamic Time Warpi
 
 ## Hyperparameters
 
-`K=1`:                                   Number of neighbors
-`weights=:uniform`:                      Either `:uniform` or `:distance` based weights of the neighbors.
-                                             - `:uniform`: All neighbors are weighted equally.
-                                             - `:distance`: Each neighbor is weighted by it's distance.
-`distance=DTW()`:                        DTW distance struct, for example `DTWSakoeChiba` or pure `DTW`.
-                                             - `DTW()`: Dynamic Time Warping without any constraints.
-                                             - `DTWSakoeChiba()`: Dynamic Time Warping with Sakoe Chiba bound constraint.
-                                             - `DTWItakura()`: Dynamic Time Warping without Itakura Parallelogram constraint.
-                                             - You can provide your own metric by subtyping `DTWType`.
-`bounding=LBNone()`:                     Lower bounding of the distance using methods like `LBKeogh()`.
-                                             - `LBNone()`: NO-OP, no lower bouning is being done.
-                                             - `LBKeogh()`: Estimating distance lower bound of the distance using the [LB_Keogh method](https://www.cs.ucr.edu/~eamonn/LB_Keogh.htm).
-                                             - You can provide your own methofs by subtyping `LBType`.
+- `K=1`:                 Number of neighbors
+- `weights=:uniform`:    Either `:uniform` or `:distance` based weights of the neighbors.
+    - `:uniform`:            All neighbors are weighted equally.
+    - `:distance`:           Each neighbor is weighted by it's distance.
+- `distance=DTW()`:      DTW distance struct, for example `DTWSakoeChiba` or pure `DTW`.
+    - `DTW()`:               Dynamic Time Warping without any constraints.
+    - `DTWSakoeChiba()`:     Dynamic Time Warping with Sakoe Chiba bound constraint.
+    - `DTWItakura()`:        Dynamic Time Warping without Itakura Parallelogram constraint.
+    - You can provide your own metric by subtyping `DTWType`.
+- `bounding=LBNone()`:   Lower bounding of the distance using methods like `LBKeogh()`.
+    - `LBNone()`:            NO-OP, no lower bouning is being done.
+    - `LBKeogh()`:           Estimating distance lower bound of the distance using the [LB_Keogh method](https://www.cs.ucr.edu/~eamonn/LB_Keogh.htm).
+    - You can provide your own methofs by subtyping `LBType`.
 
 ## Interfaces
 
