@@ -3,32 +3,10 @@ using Test: @testset, @test, @test_throws
 using CategoricalArrays: CategoricalArray, categorical
 using CategoricalDistributions: pdf
 using MLJBase: machine, fit!, fitted_params, predict, predict_mode
+import MLJModelInterface
 
+include("consts.jl")
 
-const TS1::Vector{Float64} = [0.57173714, 0.03585991, 0.16263380, 0.63153396, 0.00599358, 0.63256182, 0.85341386, 0.87538411, 0.35243848, 0.27466851]
-const TS2::Vector{Float64} = [0.17281271, 0.54244937, 0.35081248, 0.83846642, 0.74942411]
-const TS3::Vector{Float64} = [1.00000000, 1.00000000, 1.00000000, 1.00000000, 1.00000000, 1.00000000, 0.16263380, 0.63153396, 0.00599358, 0.63256182]
-const TS4::Vector{Float64} = [0.57173714, 0.03585991, 0.16263380, 0.00599358, 0.00599358, 0.00599358, 0.85341386, 0.87538411, 0.35243848, 0.27466851]
-
-const TRAIN_X::Matrix{Float64} = [
-    0 1 3
-    0 2 0
-    0 1 3
-    1 0 0
-    2 0 3
-    1 0 0
-    0 0 3
-]
-const TRAIN_Y::CategoricalArray = categorical(["a", "a", "b"])
-const TEST_X::Matrix{Float64} = [
-    0 8
-    0 1
-    1 8
-    2 1
-    1 8
-    0 1
-    0 8
-]
 
 @testset "KNNDTW.jl - dtw!() - Full" begin
     model = KNNDTW.DTW{eltype(TS1)}()
@@ -92,7 +70,7 @@ end
 end
 
 @testset "KNNDTW.jl - KNN - K=1" begin
-    nn = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TS1)}())
+    nn = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y)
     fit!(mach, verbosity=0)
@@ -103,7 +81,7 @@ end
 end
 
 @testset "KNNDTW.jl - KNN - K=3 - Xnew smaller than X" begin
-    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TS1)}())
+    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y)
     fit!(mach, verbosity=0)
@@ -114,7 +92,7 @@ end
 end
 
 @testset "KNNDTW.jl - KNN - K=3 - Xnew larger than X" begin
-    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TS1)}())
+    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y)
     fit!(mach, verbosity=0)
@@ -125,7 +103,7 @@ end
 end
 
 @testset "KNNDTW.jl - KNN - K=3 - predict_mode" begin
-    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TS1)}())
+    nn = KNNDTW.KNNDTWModel(K=3, weights=:distance, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
 
     mach = machine(nn, (TRAIN_X, :column_based), TRAIN_Y)
     fit!(mach, verbosity=0)
@@ -143,8 +121,8 @@ end
 end
 
 @testset "KNNDTW.jl - KNN - K=1 - repeated is same" begin
-    nn1 = KNNDTW.KNNDTWModel(K=2, distance=KNNDTW.DTW{eltype(TS1)}())
-    nn2 = KNNDTW.KNNDTWModel(K=2, distance=KNNDTW.DTW{eltype(TS1)}())
+    nn1 = KNNDTW.KNNDTWModel(K=2, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
+    nn2 = KNNDTW.KNNDTWModel(K=2, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
 
     mach1 = machine(nn1, (TRAIN_X, :column_based), TRAIN_Y)
     mach2 = machine(nn2, (TRAIN_X, :column_based), TRAIN_Y)
@@ -156,4 +134,53 @@ end
     pred2 = predict_mode(mach2, (TEST_X, :column_based))
 
     @test pred1 == pred2
+end
+
+@testset "KNNDTW.jl - row major and column major inputs" begin
+    data_col = TRAIN_X
+    data_row = permutedims(TRAIN_X)
+    data_vec = [view(TRAIN_X, :, col) for col in axes(TRAIN_X, 2)]
+
+    m_machine_col = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
+    m_machine_row1 = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
+    m_machine_row2 = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
+    m_machine_vec = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
+    m_model = KNNDTW.KNNDTWModel(K=1, distance=KNNDTW.DTW{eltype(TRAIN_X)}())
+
+    mach_col = machine(m_machine_col, (data_col, :column_based), TRAIN_Y)
+    mach_row1 = machine(m_machine_row1, (data_row, :row_based), TRAIN_Y)
+    mach_row2 = machine(m_machine_row2, data_row, TRAIN_Y)
+    mach_vec = machine(m_machine_vec, data_vec, TRAIN_Y)
+
+    fit!(mach_col, verbosity=0)
+    fit!(mach_row1, verbosity=0)
+    fit!(mach_row2, verbosity=0)
+    fit!(mach_vec, verbosity=0)
+    fp_model =  MLJModelInterface.fit(m_model, false, data_vec, TRAIN_Y)[1]
+
+    pred_col_c = predict_mode(mach_col, (data_col, :column_based))
+    pred_col_r1 = predict_mode(mach_col, (data_row, :row_based))
+    pred_col_r2 = predict_mode(mach_col, data_row)
+    pred_col_v = predict_mode(mach_col, data_vec)
+    @test pred_col_c == pred_col_r1 == pred_col_r2 == pred_col_v
+
+    pred_row1_c = predict_mode(mach_row1, (data_col, :column_based))
+    pred_row1_r1 = predict_mode(mach_row1, (data_row, :row_based))
+    pred_row1_r2 = predict_mode(mach_row1, data_row)
+    pred_row1_v = predict_mode(mach_row1, data_vec)
+    @test pred_row1_c == pred_row1_r1 == pred_row1_r2 == pred_row1_v
+
+    pred_row2_c = predict_mode(mach_row2, (data_col, :column_based))
+    pred_row2_r1 = predict_mode(mach_row2, (data_row, :row_based))
+    pred_row2_r2 = predict_mode(mach_row2, data_row)
+    pred_row2_v = predict_mode(mach_row2, data_vec)
+    @test pred_row2_c == pred_row2_r1 == pred_row2_r2 == pred_row2_v
+
+    pred_vec_c = predict_mode(mach_vec, (data_col, :column_based))
+    pred_vec_r1 = predict_mode(mach_vec, (data_row, :row_based))
+    pred_vec_r2 = predict_mode(mach_vec, data_row)
+    pred_vec_v = predict_mode(mach_vec, data_vec)
+    @test pred_vec_c == pred_vec_r1 == pred_vec_r2 == pred_vec_v
+
+    @test pred_col_c == pred_col_r1 == pred_col_r2 == pred_col_v == pred_row1_c == pred_row1_r1 == pred_row1_r2 == pred_row1_v == pred_row2_c == pred_row2_r1 == pred_row2_r2 == pred_row2_v == pred_vec_c == pred_vec_r1 == pred_vec_r2 == pred_vec_v
 end

@@ -249,11 +249,16 @@ MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface
     shuffled::Bool = false
 end
 
-function MLJModelInterface.reformat(::MiniRocketModel, (X, type))
+function MLJModelInterface.reformat(::MiniRocketModel, (X, type)::Tuple{<:AbstractMatrix{<:AbstractFloat}, Symbol})
     @assert type in (:row_based, :column_based)
 
     (MLJModelInterface.matrix(X, transpose = type == :row_based),)
 end
+
+function MLJModelInterface.reformat(::MiniRocketModel, X)
+    (MLJModelInterface.matrix(X, transpose = true),)
+end
+
 MLJModelInterface.selectrows(::MiniRocketModel, I, Xmatrix) = (view(Xmatrix, :, I),)
 
 "Function to train MiniRocket transformer."
@@ -286,7 +291,7 @@ function MLJModelInterface.transform(
         dilations = fitresult[1],
         num_features_per_dilation = fitresult[2],
         biases = fitresult[3],
-    )
+    ) |> transpose
 end
 
 "Loads fit paramters of the MiniRocket transformer."

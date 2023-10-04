@@ -27,14 +27,22 @@ MLJModelInterface.metadata_pkg.(
 
 MLJModelInterface.metadata_model(
     MiniRocketModel,
-    input_scitype = Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown},
+    input_scitype = Union{
+        AbstractMatrix{<:MLJModelInterface.Continuous},
+        Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown}
+    },
     output_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
     load_path = "TimeSeriesClassification.MiniRocketModel",
 )
 
 MLJModelInterface.metadata_model(
     KNNDTWModel,
-    input_scitype = AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}},
+    input_scitype = Union{
+        AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}},
+        Tuple{AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}}, MLJModelInterface.Unknown},
+        AbstractMatrix{<:MLJModelInterface.Continuous},
+        Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown}
+    },
     output_scitype = AbstractMatrix{<:MLJModelInterface.Finite},
     load_path = "TimeSeriesClassification.KNNDTWModel",
 )
@@ -73,6 +81,8 @@ A model parameters are built using [`MiniRocket._MiniRocket.fit`](@ref):
 model_params = fit(X_train; num_features = model.num_features, max_dilations_per_kernel = model.max_dilations_per_kernel, shuffled = model.shuffled, rng = model.rng)
 ```
 
+where `X_train` is a column based matrix of training data.
+
 #### Transforming data
 
 The gathered model parameters can be used for transforming other data using [`MiniRocket._MiniRocket.transform`](@ref):
@@ -82,16 +92,24 @@ dilations, num_features_per_dilation, biases = model_params
 X_transformed = transform(X_new; dilations = dilations, num_features_per_dilation = num_features_per_dilation, biases = biases)
 ```
 
+where `X_train` is a column based matrix of training data, `X_new` is a column based matrix of data to be transformed and `X_transformed` is a column based matrix of transformed data.
+
 ### MLJ model API
 
 Crate an instance with default hyperparameters or override them with your own using [`MiniRocket._MiniRocket.MiniRocketModel`](@ref) and build a MLJ machine:
 
 ```julia
 minirocket_model = MiniRocketModel()
+mach = machine(minirocket_model, X_train)
+mach = machine(minirocket_model, (X_train, :row_based))
+
+# or when X is column based
 mach = machine(minirocket_model, (X_train, :column_based))
 ```
 
-You must specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter.
+`X_train` is a matrix of training data.
+You can specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter.
+Column major format is preferred for performance since Julia is a column major language.
 
 #### Training model
 
@@ -99,7 +117,9 @@ Train the machine using `fit!(mach)`.
 
 #### Transforming data
 
-Transform the data using `transform(mach, (X_new, :column_based))` or using `transform(mach, (X_new, :row_based))` in case of row based data.
+Transform the data using `transform(mach, X_new)` or `transform(mach, (X_new, :row_based))` or using `transform(mach, (X_new, :column_based))` in case of row based data.
+
+The result is always row major (column major, but with `tranpose` applied). To convert the result to column major format use `transpose`, which should be without any extra computational cost.
 
 """
 MiniRocketModel
@@ -137,10 +157,16 @@ Crate an instance with default hyperparameters or override them with your own us
 
 ```julia
 knndtw_model = KNNDTWModel()
+mach = machine(knndtw_model, X_train, Y_train)
+mach = machine(knndtw_model, (X_train, :row_based), Y_train)
+
+# or when X is column based
 mach = machine(knndtw_model, (X_train, :column_based), Y_train)
 ```
 
-You must specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter.
+`X_train` is either a matrix or a vector of vectors of training data.
+You can specify if the matrix provided os row or column based using the `:column_based` and `:row_based` parameter.
+Column major format is preferred for performance since Julia is a column major language.
 
 #### Training model
 
@@ -148,7 +174,7 @@ Train the machine using `fit!(mach)`.
 
 #### Predicting
 
-To predict "probability" of a class you can use `predict` like `predict(mach, (X_new, :column_based))` for columns based data or using `predict(mach, (X_new, :row_based))` in case of row based data.
+To predict "probability" of a class you can use `predict` like `predict(mach, X_new)` or `predict(mach, (X_new, :row_based))` for row major data or using `predict(mach, (X_new, :column_based))` in case of column major data.
 
 To classify the data (to get the most probable class) you can use `predict_mode` in a similar fashion.
 """
