@@ -107,9 +107,12 @@ mach = machine(minirocket_model, (X_train, :row_based))
 mach = machine(minirocket_model, (X_train, :column_based))
 ```
 
-`X_train` is a matrix of training data.
-You can specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter.
-Column major format is preferred for performance since Julia is a column major language.
+`X_train` is a matrix of (row based) training data, unless specified otherwise using `:row_based` or `:column_based`.
+
+Since this algorithm requires column based data `machine(minirocket_model, X_train)` uses `transpose(...)` to convert the data, possibly without copying the data, at the cost of performance.
+If you have column based data, passing `machine(minirocket_model, transpose(X_train))` should make no copies of the data without affecting the performance.
+You can specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter for better performance.
+When `:row_based`, the dataset is converted using `permutedims(...)` at the cost of creating a copy of the data, when `:column_based`, no copies are made.
 
 #### Training model
 
@@ -164,9 +167,12 @@ mach = machine(knndtw_model, (X_train, :row_based), Y_train)
 mach = machine(knndtw_model, (X_train, :column_based), Y_train)
 ```
 
-`X_train` is either a matrix or a vector of vectors of training data.
-You can specify if the matrix provided os row or column based using the `:column_based` and `:row_based` parameter.
-Column major format is preferred for performance since Julia is a column major language.
+`X_train` is either a vector of vectors of training data or a (row based) matrix, unless specified otherwise using `:row_based` or `:column_based`.
+
+When `X` is a matrix, the data might be copied.
+Since this algorithm preffers column based data, using purely `machine(knndtw_model, X_train, Y_train)` will copy the data and convert it to algorithm's preferred format.
+You can specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter.
+When `:row_based`, the approach is the same as with calling `machine(knndtw_model, X_train, Y_train)` without any extra parameters, when `:column_based`, no copies of the data are made.
 
 #### Training model
 

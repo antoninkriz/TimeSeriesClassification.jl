@@ -256,7 +256,7 @@ function MLJModelInterface.reformat(::MiniRocketModel, (X, type)::Tuple{<:Abstra
 end
 
 function MLJModelInterface.reformat(::MiniRocketModel, X)
-    (MLJModelInterface.matrix(X, transpose = true),)
+    (transpose(MLJModelInterface.matrix(X)),)
 end
 
 MLJModelInterface.selectrows(::MiniRocketModel, I, Xmatrix) = (view(Xmatrix, :, I),)
