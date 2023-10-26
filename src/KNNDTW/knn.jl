@@ -23,11 +23,10 @@ function MLJModelInterface.reformat(::KNNDTWModel, X::AbstractMatrix{<:AbstractF
     Xt = transpose(X)
     return ([view(Xt, :, col) for col in axes(Xt, 2)],)
 end
+MLJModelInterface.reformat(m::KNNDTWModel, X::AbstractMatrix{<:AbstractFloat}, y) = (MLJModelInterface.reformat(m, X)..., MLJModelInterface.categorical(y))
 
 MLJModelInterface.reformat(::KNNDTWModel, X::AbstractVector{<:AbstractVector{<:AbstractFloat}}) = (X,)
 MLJModelInterface.reformat(::KNNDTWModel, X::AbstractVector{<:AbstractVector{<:AbstractFloat}}, y) = (X, MLJModelInterface.categorical(y))
-
-MLJModelInterface.reformat(m::KNNDTWModel, X::AbstractMatrix{<:AbstractFloat}, y) = (MLJModelInterface.reformat(m, X)..., MLJModelInterface.categorical(y))
 
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xvec) = (view(Xvec, I),)
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xvec, y) = (view(Xvec, I), view(y, I))
