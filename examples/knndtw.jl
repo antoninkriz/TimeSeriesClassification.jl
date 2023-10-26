@@ -95,7 +95,7 @@ knndtw = KNNDTWModel(
 )
 
 # ╔═╡ 56ad9782-3349-4ad6-8a30-12aa8f322d0c
-mach = machine(knndtw, (trainX, :column_based), trainY)
+mach = machine(knndtw, transpose(trainX), trainY)
 
 # ╔═╡ 64a0ffc2-22e8-43f7-a216-80337a9d6434
 md"
@@ -111,7 +111,7 @@ md"
 "
 
 # ╔═╡ 6341b366-b832-4a1e-8ffb-7a8b1e4691f6
-yhat = predict_mode(mach, (testX, :column_based))
+yhat = predict_mode(mach, transpose(testX))
 
 # ╔═╡ 9585942e-98f5-472f-92a1-3c9f23e96076
 accuracy(testY, yhat)

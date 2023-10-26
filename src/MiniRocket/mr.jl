@@ -249,12 +249,6 @@ MLJModelInterface.@mlj_model mutable struct MiniRocketModel <: MLJModelInterface
     shuffled::Bool = false
 end
 
-function MLJModelInterface.reformat(::MiniRocketModel, (X, type)::Tuple{<:AbstractMatrix{<:AbstractFloat}, Symbol})
-    @assert type in (:row_based, :column_based)
-
-    (MLJModelInterface.matrix(X, transpose = type == :row_based),)
-end
-
 function MLJModelInterface.reformat(::MiniRocketModel, X)
     (transpose(MLJModelInterface.matrix(X)),)
 end

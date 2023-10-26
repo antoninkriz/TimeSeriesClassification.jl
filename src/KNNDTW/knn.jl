@@ -19,23 +19,15 @@ MLJModelInterface.@mlj_model mutable struct KNNDTWModel <: MLJModelInterface.Pro
     bounding::LBType = LBNone()
 end
 
-function MLJModelInterface.reformat(::KNNDTWModel, (X, type)::Tuple{<:AbstractMatrix{<:AbstractFloat}, Symbol})
-    @assert type in (:row_based, :column_based) "Unsupported matrix format"
-
-    return if type == :row_based
-        ([X[row, :] for row in axes(X, 1)],)
-    else
-        ([view(X, :, col) for col in axes(X, 2)],)
-    end
+function MLJModelInterface.reformat(::KNNDTWModel, X::AbstractMatrix{<:AbstractFloat})
+    Xt = transpose(X)
+    return ([view(Xt, :, col) for col in axes(Xt, 2)],)
 end
 
 MLJModelInterface.reformat(::KNNDTWModel, X::AbstractVector{<:AbstractVector{<:AbstractFloat}}) = (X,)
 MLJModelInterface.reformat(::KNNDTWModel, X::AbstractVector{<:AbstractVector{<:AbstractFloat}}, y) = (X, MLJModelInterface.categorical(y))
 
-MLJModelInterface.reformat(m::KNNDTWModel, X::AbstractMatrix{<:AbstractFloat}) = MLJModelInterface.reformat(m, (X, :row_based))
-MLJModelInterface.reformat(m::KNNDTWModel, X::AbstractMatrix{<:AbstractFloat}, y) = (MLJModelInterface.reformat(m, (X, :row_based))..., MLJModelInterface.categorical(y))
-
-MLJModelInterface.reformat(m::KNNDTWModel, (X, type)::Tuple{<:AbstractMatrix{<:AbstractFloat}, Symbol}, y) = (MLJModelInterface.reformat(m, (X, type))..., MLJModelInterface.categorical(y))
+MLJModelInterface.reformat(m::KNNDTWModel, X::AbstractMatrix{<:AbstractFloat}, y) = (MLJModelInterface.reformat(m, X)..., MLJModelInterface.categorical(y))
 
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xvec) = (view(Xvec, I),)
 MLJModelInterface.selectrows(::KNNDTWModel, I, Xvec, y) = (view(Xvec, I), view(y, I))

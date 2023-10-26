@@ -105,7 +105,7 @@ pipe = Pipeline(
 )
 
 # ╔═╡ 2ae9683a-9ac3-4c33-b29a-fdc96cc7dd12
-mach = machine(pipe, (trainX, :column_based), trainY)
+mach = machine(pipe, transpose(trainX), trainY)
 
 # ╔═╡ d7f36102-574e-4c92-9886-fd8da8a8af5d
 md"
@@ -126,7 +126,7 @@ md"
 "
 
 # ╔═╡ e9fc1277-ecbc-49da-bef8-7cfb5374576a
-pred = predict(mach, (testX, :column_based))
+pred = predict(mach, transpose(testX))
 
 # ╔═╡ 9c6e3de1-de6c-4394-a316-81fcd4d6c870
 accuracy(testY, pred)

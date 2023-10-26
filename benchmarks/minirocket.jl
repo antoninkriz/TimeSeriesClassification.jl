@@ -14,9 +14,9 @@ pre() = begin
     trainX = DataSets.dataset_flatten_to_matrix(trainX)
     trainY = categorical(trainY, levels=unique(trainY))
     mini = MiniRocketModel()
-    mach = machine(mini, (trainX, :column_based))
+    mach = machine(mini, transpose(trainX))
     fit!(mach, verbosity = 0)
-    transform(mach, (trainX, :column_based))
+    transform(mach, transpose(trainX))
     println("Precompilation done.")
 end
 pre()
@@ -61,7 +61,7 @@ for dataset in datasets
     # Create model
     @time begin
         mini = MiniRocketModel()
-        mach = machine(mini, (trainX, :column_based))
+        mach = machine(mini, transpose(trainX))
     end
 
     # Fit model
@@ -69,8 +69,8 @@ for dataset in datasets
 
     # Transform both trainX and testX
     @time begin
-        t1 = transform(mach, (trainX, :column_based))
-        t2 = transform(mach, (trainX, :column_based))
+        t1 = transform(mach, transpose(trainX))
+        t2 = transform(mach, transpose(trainX))
     end
 
     # No evaluation for MiniRocket as it's just a transformer

@@ -27,10 +27,7 @@ MLJModelInterface.metadata_pkg.(
 
 MLJModelInterface.metadata_model(
     MiniRocketModel,
-    input_scitype = Union{
-        AbstractMatrix{<:MLJModelInterface.Continuous},
-        Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown}
-    },
+    input_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
     output_scitype = AbstractMatrix{<:MLJModelInterface.Continuous},
     load_path = "TimeSeriesClassification.MiniRocketModel",
 )
@@ -39,9 +36,7 @@ MLJModelInterface.metadata_model(
     KNNDTWModel,
     input_scitype = Union{
         AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}},
-        Tuple{AbstractVector{<:AbstractVector{<:MLJModelInterface.Continuous}}, MLJModelInterface.Unknown},
         AbstractMatrix{<:MLJModelInterface.Continuous},
-        Tuple{AbstractMatrix{<:MLJModelInterface.Continuous}, MLJModelInterface.Unknown}
     },
     output_scitype = AbstractMatrix{<:MLJModelInterface.Finite},
     load_path = "TimeSeriesClassification.KNNDTWModel",
@@ -83,6 +78,8 @@ model_params = fit(X_train; num_features = model.num_features, max_dilations_per
 
 where `X_train` is a column based matrix of training data.
 
+Column based means, that each time series (sample) is in a column of the matrix.
+
 #### Transforming data
 
 The gathered model parameters can be used for transforming other data using [`MiniRocket._MiniRocket.transform`](@ref):
@@ -94,6 +91,8 @@ X_transformed = transform(X_new; dilations = dilations, num_features_per_dilatio
 
 where `X_train` is a column based matrix of training data, `X_new` is a column based matrix of data to be transformed and `X_transformed` is a column based matrix of transformed data.
 
+Column based means, that each time series (sample) is in a column of the matrix.
+
 ### MLJ model API
 
 Crate an instance with default hyperparameters or override them with your own using [`MiniRocket._MiniRocket.MiniRocketModel`](@ref) and build a MLJ machine:
@@ -101,18 +100,15 @@ Crate an instance with default hyperparameters or override them with your own us
 ```julia
 minirocket_model = MiniRocketModel()
 mach = machine(minirocket_model, X_train)
-mach = machine(minirocket_model, (X_train, :row_based))
 
 # or when X is column based
-mach = machine(minirocket_model, (X_train, :column_based))
+mach = machine(minirocket_model, transpose(X_train))
 ```
 
-`X_train` is a matrix of (row based) training data, unless specified otherwise using `:row_based` or `:column_based`.
+`X_train` is a matrix of (row based) training data.
 
-Since this algorithm requires column based data `machine(minirocket_model, X_train)` uses `transpose(...)` to convert the data, possibly without copying the data, at the cost of performance.
-If you have column based data, passing `machine(minirocket_model, transpose(X_train))` should make no copies of the data without affecting the performance.
-You can specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter for better performance.
-When `:row_based`, the dataset is converted using `permutedims(...)` at the cost of creating a copy of the data, when `:column_based`, no copies are made.
+Since this algorithm requires column based data `machine(minirocket_model, X_train)` uses `transpose(...)` to convert the data (therefore possibly without creating a copy) at the cost of performance.
+If you already have column based data, passing `machine(minirocket_model, transpose(X_train))` should cancel-out both `transpose(...)` calls, thus make no copies of the data without affecting the performance.
 
 #### Training model
 
@@ -120,9 +116,10 @@ Train the machine using `fit!(mach)`.
 
 #### Transforming data
 
-Transform the data using `transform(mach, X_new)` or `transform(mach, (X_new, :row_based))` or using `transform(mach, (X_new, :column_based))` in case of row based data.
+Transform the data using `transform(mach, X_new)` in case of row based data or `transform(mach, transpose(X_new))` in case of column based data.
 
-The result is always row major (column major, but with `tranpose` applied). To convert the result to column major format use `transpose`, which should be without any extra computational cost.
+The result is always row major (column major, but with `tranpose` applied).  
+To convert the result to column major format use `transpose(...)`, which should be without any extra computational cost.
 
 """
 MiniRocketModel
@@ -161,18 +158,16 @@ Crate an instance with default hyperparameters or override them with your own us
 ```julia
 knndtw_model = KNNDTWModel()
 mach = machine(knndtw_model, X_train, Y_train)
-mach = machine(knndtw_model, (X_train, :row_based), Y_train)
 
 # or when X is column based
-mach = machine(knndtw_model, (X_train, :column_based), Y_train)
+mach = machine(knndtw_model, transpose(X_train), Y_train)
 ```
 
-`X_train` is either a vector of vectors of training data or a (row based) matrix, unless specified otherwise using `:row_based` or `:column_based`.
+`X_train` is either a vector of vectors of training data or a (row based) matrix.
 
 When `X` is a matrix, the data might be copied.
-Since this algorithm preffers column based data, using purely `machine(knndtw_model, X_train, Y_train)` will copy the data and convert it to algorithm's preferred format.
-You can specify if the data provided are row or column based using the `:column_based` and `:row_based` parameter.
-When `:row_based`, the approach is the same as with calling `machine(knndtw_model, X_train, Y_train)` without any extra parameters, when `:column_based`, no copies of the data are made.
+Since this algorithm prefers column based data, and using purely `machine(knndtw_model, X_train, Y_train)` utilizes `tranpose(...)` while creating view over columns to convert the input into algorithm's preferred format, which might affect the final performance of the algorithm.
+Column based data passed with `transpose(...)` applied as `machine(knndtw_model, transpose(X_train), Y_train)` is preferred.
 
 #### Training model
 
@@ -180,7 +175,7 @@ Train the machine using `fit!(mach)`.
 
 #### Predicting
 
-To predict "probability" of a class you can use `predict` like `predict(mach, X_new)` or `predict(mach, (X_new, :row_based))` for row major data or using `predict(mach, (X_new, :column_based))` in case of column major data.
+To predict "probability" of a class you can use `predict` like `predict(mach, X_new)` for row based data or `predict(mach, tranpose(X_new))` in case of column major data.
 
 To classify the data (to get the most probable class) you can use `predict_mode` in a similar fashion.
 """
