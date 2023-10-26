@@ -59,7 +59,7 @@ function DTWItakura{T}(;
 end
 
 "Function to calucate vanilla DTW distance between `x` and `y`."
-function dtw!(model::DTW{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+function dtw!(model::DTW{T}, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows
@@ -95,7 +95,7 @@ function dtw!(model::DTW{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tar
 end
 
 "Function to calucate Sakoe-Chiba band limited DTW distance between `x` and `y`."
-function dtw!(model::DTWSakoeChiba{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+function dtw!(model::DTWSakoeChiba{T}, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows
@@ -134,7 +134,7 @@ function dtw!(model::DTWSakoeChiba{T}, x::Tarr, y::Tarr)::T where {T <: Abstract
 end
 
 "Function to calucate Itakura parallelogram limited DTW distance between `x` and `y`."
-function dtw!(model::DTWItakura{T}, x::Tarr, y::Tarr)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+function dtw!(model::DTWItakura{T}, x::AbstractVector{T}, y::AbstractVector{T})::T where {T <: AbstractFloat}
     row_count, col_count = length(x), length(y)
 
     # Julia is column major, to make things faster let longer timeseries = columns and shorter timeseries = rows

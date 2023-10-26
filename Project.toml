@@ -21,6 +21,7 @@ ZipFile = "a5390f91-8eb1-5f08-bee0-b1d1ffed6cea"
 CategoricalArrays = "^0.10.8"
 CategoricalDistributions = "^0.1.10"
 LoopVectorization = "^0.12.165"
+MLJBase = "^1.0.0"
 MLJModelInterface = "^1.9.1"
 ProgressMeter = "^1.7.2"
 StaticArrays = "^1.6.2"
@@ -29,8 +30,8 @@ ZipFile = "^0.10.1"
 julia = "^1.9.2"
 
 [extras]
-MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
+MLJBase = "a7f614a8-145f-11e9-1d2a-a57a1082229d"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["MLJ", "Test"]
+test = ["MLJBase", "Test"]

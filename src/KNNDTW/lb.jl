@@ -31,7 +31,7 @@ function LBKeogh{T}(;
 end
 
 "Lower bound method that always returns zero."
-function lower_bound!(::LBNone, ::Tarr, ::Tarr; update::Bool = true)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+function lower_bound!(::LBNone, ::AbstractVector{T}, ::AbstractVector{T}; update::Bool = true)::T where {T <: AbstractFloat}
     zero(T)
 end
 
@@ -40,7 +40,7 @@ Function implementing the lower bound LB_Keogh method.
 
 Set update=true to update the envelope forcefully.
 "
-function lower_bound!(lb::LBKeogh{T}, enveloped::Tarr, query::Tarr; update::Bool = true)::T where {T <: AbstractFloat, Tarr <: AbstractVector{T}}
+function lower_bound!(lb::LBKeogh{T}, enveloped::AbstractVector{T}, query::AbstractVector{T}; update::Bool = true)::T where {T <: AbstractFloat}
     @assert length(enveloped) === length(query) "Enveloped serires and query series must be of the same length"
     @assert length(enveloped) >= lb.radius + 1 "Window raidus can not be larger than the series itself"
 

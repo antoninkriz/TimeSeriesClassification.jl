@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.27
+# v0.19.30
 
 using Markdown
 using InteractiveUtils
@@ -11,7 +11,10 @@ begin
 end
 
 # ╔═╡ 00b0fe73-dfb0-44f9-a627-32a5778f16b5
-using MLJ
+using MLJBase
+
+# ╔═╡ b9246117-3580-44a9-b272-7761b6357484
+using StatisticalMeasures
 
 # ╔═╡ 08bc10bd-76c4-4dba-ae55-7d6831363632
 using TimeSeriesClassification: KNNDTWModel, DTWSakoeChiba, DataSets
@@ -36,7 +39,7 @@ Let's activate the TimeSeriesClassification package environment first
 
 # ╔═╡ 8cf09d70-28e5-4cec-a752-4a8016ec6520
 md"
-... and import required packages like MLJ
+... and import required packages like MLJ or MLJBase
 "
 
 # ╔═╡ 5b5a7832-bd13-403e-9425-d31bab258473
@@ -92,7 +95,7 @@ knndtw = KNNDTWModel(
 )
 
 # ╔═╡ 56ad9782-3349-4ad6-8a30-12aa8f322d0c
-mach = machine(knndtw, (trainX, :column_based), trainY)
+mach = machine(knndtw, transpose(trainX), trainY)
 
 # ╔═╡ 64a0ffc2-22e8-43f7-a216-80337a9d6434
 md"
@@ -108,7 +111,7 @@ md"
 "
 
 # ╔═╡ 6341b366-b832-4a1e-8ffb-7a8b1e4691f6
-yhat = predict_mode(mach, (testX, :column_based))
+yhat = predict_mode(mach, transpose(testX))
 
 # ╔═╡ 9585942e-98f5-472f-92a1-3c9f23e96076
 accuracy(testY, yhat)
@@ -120,6 +123,7 @@ accuracy(testY, yhat)
 # ╠═ecbdafa9-5bf2-4b26-9b0b-f0dd2a2f2d7e
 # ╟─8cf09d70-28e5-4cec-a752-4a8016ec6520
 # ╠═00b0fe73-dfb0-44f9-a627-32a5778f16b5
+# ╠═b9246117-3580-44a9-b272-7761b6357484
 # ╟─5b5a7832-bd13-403e-9425-d31bab258473
 # ╠═08bc10bd-76c4-4dba-ae55-7d6831363632
 # ╠═0532c6d2-5f69-45b2-a880-b5253396c4c0

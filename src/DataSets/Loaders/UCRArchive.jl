@@ -11,7 +11,7 @@ using StaticArrays: SVector
 
 export UCRArchive
 
-const URL = "https://www.timeseriesclassification.com/Downloads/Archives/Univariate2018_ts.zip"
+const URL = "https://www.timeseriesclassification.com/aeon-toolkit/Archives/Univariate2018_ts.zip"
 const FILE = "Univariate2018_ts.zip"
 const ZIP_FOLDER = "Univariate_ts"
 const AVAILABLE_DATASETS::SVector{128, Symbol} = [
